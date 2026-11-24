@@ -22,6 +22,10 @@ Enter a public GitHub repository as `owner/repo` or as a GitHub URL. The app
 fetches up to 20 recent open issues, excluding pull requests. No GitHub token is
 required for this first version.
 
+The Summary column currently uses a simple extractive baseline: it shows up to
+the first two sentences of each issue description, capped at 240 characters.
+It does not call an AI model yet.
+
 ## Run tests
 
 ```bash

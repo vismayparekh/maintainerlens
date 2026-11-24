@@ -2,6 +2,7 @@ import requests
 import gradio as gr
 
 from app.github_client import MAX_ISSUES, fetch_issues
+from app.processor import summarize_issue
 
 
 def load_issues(repository: str, issue_limit: int) -> tuple[list[list[object]], str]:
@@ -11,7 +12,14 @@ def load_issues(repository: str, issue_limit: int) -> tuple[list[list[object]], 
         raise gr.Error(str(exc)) from exc
 
     rows = [
-        [issue.number, issue.title, issue.body, ", ".join(issue.labels), issue.url]
+        [
+            issue.number,
+            issue.title,
+            summarize_issue(issue.body),
+            issue.body,
+            ", ".join(issue.labels),
+            issue.url,
+        ]
         for issue in issues
     ]
     if not issues:
@@ -40,8 +48,8 @@ def create_app() -> gr.Blocks:
         fetch_button = gr.Button("Fetch issues", variant="primary")
         status = gr.Markdown()
         issues_table = gr.Dataframe(
-            headers=["#", "Title", "Body", "Labels", "URL"],
-            datatype=["number", "str", "str", "str", "str"],
+            headers=["#", "Title", "Summary", "Body", "Labels", "URL"],
+            datatype=["number", "str", "str", "str", "str", "str"],
             interactive=False,
             wrap=True,
             label="Open issues",
