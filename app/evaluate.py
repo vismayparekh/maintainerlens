@@ -50,7 +50,11 @@ def export_template(repository: str, limit: int, output: Path) -> int:
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=CSV_COLUMNS)
+        writer = csv.DictWriter(
+            file,
+            fieldnames=CSV_COLUMNS,
+            lineterminator="\n",
+        )
         writer.writeheader()
         for issue in issues:
             writer.writerow(
