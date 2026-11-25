@@ -15,7 +15,14 @@ class LoadIssuesTests(unittest.TestCase):
                 body="The app crashes. It happens on startup.",
                 labels=("bug",),
                 url="https://github.com/acme/project/issues/12",
-            )
+            ),
+            GitHubIssue(
+                number=13,
+                title="Related issue",
+                body="The app crashes. It happens on startup.",
+                labels=(),
+                url="https://github.com/acme/project/issues/13",
+            ),
         ]
 
         rows, status = load_issues("acme/project", 10)
@@ -26,12 +33,13 @@ class LoadIssuesTests(unittest.TestCase):
                 12,
                 "First issue",
                 "The app crashes. It happens on startup.",
+                "#13 Related issue (67%)",
                 "The app crashes. It happens on startup.",
                 "bug",
                 "https://github.com/acme/project/issues/12",
             ],
         )
-        self.assertEqual(status, "Loaded 1 open issue(s).")
+        self.assertEqual(status, "Loaded 2 open issue(s).")
 
 
 if __name__ == "__main__":

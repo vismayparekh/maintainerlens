@@ -2,7 +2,7 @@ import requests
 import gradio as gr
 
 from app.github_client import MAX_ISSUES, fetch_issues
-from app.processor import summarize_issue
+from app.processor import find_similar_issues, summarize_issue
 
 
 def load_issues(repository: str, issue_limit: int) -> tuple[list[list[object]], str]:
@@ -11,11 +11,17 @@ def load_issues(repository: str, issue_limit: int) -> tuple[list[list[object]], 
     except (ValueError, requests.RequestException) as exc:
         raise gr.Error(str(exc)) from exc
 
+    similar_issues = find_similar_issues(issues)
     rows = [
         [
             issue.number,
             issue.title,
             summarize_issue(issue.body),
+            "; ".join(
+                f"#{match.issue.number} {match.issue.title} ({match.score:.0%})"
+                for match in similar_issues[issue.number]
+            )
+            or "No matches above 20% token overlap",
             issue.body,
             ", ".join(issue.labels),
             issue.url,
@@ -31,7 +37,8 @@ def create_app() -> gr.Blocks:
     with gr.Blocks(title="MaintainerLens") as demo:
         gr.Markdown(
             "# MaintainerLens\n"
-            "Review recent open issues from a public GitHub repository."
+            "Review recent open issues from a public GitHub repository. "
+            "Similarity suggestions compare only the issues fetched in this batch."
         )
         with gr.Row():
             repository = gr.Textbox(
@@ -48,8 +55,16 @@ def create_app() -> gr.Blocks:
         fetch_button = gr.Button("Fetch issues", variant="primary")
         status = gr.Markdown()
         issues_table = gr.Dataframe(
-            headers=["#", "Title", "Summary", "Body", "Labels", "URL"],
-            datatype=["number", "str", "str", "str", "str", "str"],
+            headers=[
+                "#",
+                "Title",
+                "Summary",
+                "Potential matches",
+                "Body",
+                "Labels",
+                "URL",
+            ],
+            datatype=["number", "str", "str", "str", "str", "str", "str"],
             interactive=False,
             wrap=True,
             label="Open issues",

@@ -26,6 +26,10 @@ The Summary column currently uses a simple extractive baseline: it shows up to
 the first two sentences of each issue description, capped at 240 characters.
 It does not call an AI model yet.
 
+The Potential matches column compares the fetched issues using token overlap.
+It shows up to three suggestions with at least 20% overlap; it only compares
+issues in the current batch, and matches are not confirmed duplicates.
+
 ## Run tests
 
 ```bash
