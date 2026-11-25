@@ -12,12 +12,24 @@ _BUG_TERMS = re.compile(
     r"\b(?:bug|crash(?:es|ed)?|error|exception|regression|broken|"
     r"fail(?:s|ed)?|failure)\b"
 )
+_BUG_TITLE_TERMS = re.compile(
+    r"\b(?:bug|crash(?:es|ed)?|regression|broken|fail(?:s|ed)?|failure|"
+    r"incorrect|wrong|invalid|drop(?:s|ped)?|treat(?:s|ed)?)\b"
+)
 _FEATURE_TERMS = re.compile(
     r"\b(?:feature request|new feature|feature|enhancement|add support|support for|"
-    r"would like|please add)\b"
+    r"would like|please add|promot(?:e|es|ed|ing))\b|\benh\s*:"
 )
 _QUESTION_START = re.compile(
-    r"^(?:how|what|why|when|where|who|can|could|do|does|is|are|should)\b"
+    r"^(?:how|what|why|when|where|who|can|could|do|does|is|are|should|questions?)\b"
+)
+_QUESTION_IN_BODY = re.compile(
+    r"(?:^|[\n.!?]\s*)(?:how|what|why|when|where|who|can|could|do|does|is|are|"
+    r"should|was|were)\b[^.!?\n]{0,200}\?"
+)
+_OTHER_TITLE_TERMS = re.compile(
+    r"\b(?:tests?\b|test[a-z0-9_]*timeout\b|coverage|docs?|documentation|"
+    r"docstrings?|examples?|quickstart)"
 )
 _STOPWORDS = set(
     "a about after all also an and are as at be been but by can could did do does "
@@ -48,8 +60,17 @@ def classify_issue(issue: GitHubIssue, *, use_labels: bool = True) -> str:
         if {"feature", "enhancement"} & label_tokens:
             return "Feature request"
 
-    title = issue.title.strip()
-    if _QUESTION_START.search(title.casefold()):
+    title = issue.title.strip().casefold()
+    if _QUESTION_START.search(title) or title.endswith("?"):
+        return "Question"
+
+    if _FEATURE_TERMS.search(title):
+        return "Feature request"
+    if _BUG_TITLE_TERMS.search(title):
+        return "Bug"
+    if _OTHER_TITLE_TERMS.search(title):
+        return "Other"
+    if _QUESTION_IN_BODY.search(issue.body.casefold()):
         return "Question"
 
     text = f"{title} {issue.body}".casefold()

@@ -30,9 +30,10 @@ The Potential matches column compares the fetched issues using token overlap.
 It shows up to three suggestions with at least 20% overlap; it only compares
 issues in the current batch, and matches are not confirmed duplicates.
 
-The Category column first checks recognized GitHub labels, then uses common
-keywords in the issue title and body to suggest Bug, Question, Feature request,
-or Other. This is a rule-based baseline, not a trained classifier.
+The Category column first checks recognized GitHub labels, then uses title
+signals and common keywords in the issue title and body to suggest Bug,
+Question, Feature request, or Other. This is a rule-based baseline, not a
+trained classifier.
 
 ## Evaluate the baseline
 
