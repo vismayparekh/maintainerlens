@@ -7,7 +7,9 @@ from app.github_client import GitHubIssue
 
 class LoadIssuesTests(unittest.TestCase):
     @patch("app.app.fetch_issues")
-    def test_includes_summary_in_results(self, fetch_issues: Mock) -> None:
+    def test_includes_category_summary_and_similarity_matches(
+        self, fetch_issues: Mock
+    ) -> None:
         fetch_issues.return_value = [
             GitHubIssue(
                 number=12,
@@ -31,6 +33,7 @@ class LoadIssuesTests(unittest.TestCase):
             rows[0],
             [
                 12,
+                "Bug",
                 "First issue",
                 "The app crashes. It happens on startup.",
                 "#13 Related issue (67%)",

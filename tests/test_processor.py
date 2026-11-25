@@ -1,10 +1,55 @@
 import unittest
 
 from app.github_client import GitHubIssue
-from app.processor import find_similar_issues, summarize_issue
+from app.processor import classify_issue, find_similar_issues, summarize_issue
 
 
 class IssueProcessorTests(unittest.TestCase):
+    def test_classifies_labels_and_common_text_patterns(self) -> None:
+        cases = [
+            (
+                "How to recover from a crash?",
+                "The app crashes during login.",
+                ("question",),
+                "Question",
+            ),
+            (
+                "Saving data fails",
+                "An exception is raised.",
+                (),
+                "Bug",
+            ),
+            (
+                "Feature request: allow custom themes",
+                "",
+                (),
+                "Feature request",
+            ),
+            (
+                "How do I configure custom themes?",
+                "",
+                (),
+                "Question",
+            ),
+            (
+                "Document the install command",
+                "",
+                (),
+                "Other",
+            ),
+        ]
+
+        for number, (title, body, labels, expected) in enumerate(cases, start=1):
+            with self.subTest(title=title):
+                issue = GitHubIssue(
+                    number=number,
+                    title=title,
+                    body=body,
+                    labels=labels,
+                    url=f"https://github.com/acme/project/issues/{number}",
+                )
+                self.assertEqual(classify_issue(issue), expected)
+
     def test_returns_first_two_sentences_with_normalized_whitespace(self) -> None:
         body = "The app crashes.  It happens on startup.\nMore details follow."
 

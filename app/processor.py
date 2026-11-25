@@ -7,6 +7,16 @@ from app.github_client import GitHubIssue
 MAX_SUMMARY_LENGTH = 240
 SIMILARITY_THRESHOLD = 0.2
 MAX_SIMILAR_ISSUES = 3
+_BUG_TERMS = re.compile(
+    r"\b(?:bug|crash(?:es|ed)?|error|exception|regression|broken|fail(?:s|ed)?|failure)\b"
+)
+_FEATURE_TERMS = re.compile(
+    r"\b(?:feature request|new feature|feature|enhancement|add support|support for|"
+    r"would like|please add)\b"
+)
+_QUESTION_START = re.compile(
+    r"^(?:how|what|why|when|where|who|can|could|do|does|is|are|should)\b"
+)
 _STOPWORDS = set(
     "a about after all also an and are as at be been but by can could did do does "
     "for from had has have he her here him his how i if in into is it its me more "
@@ -20,6 +30,31 @@ _STOPWORDS = set(
 class SimilarityMatch:
     issue: GitHubIssue
     score: float
+
+
+def classify_issue(issue: GitHubIssue) -> str:
+    label_tokens = {
+        token
+        for label in issue.labels
+        for token in re.findall(r"[a-z0-9]+", label.casefold())
+    }
+    if "bug" in label_tokens:
+        return "Bug"
+    if "question" in label_tokens:
+        return "Question"
+    if {"feature", "enhancement"} & label_tokens:
+        return "Feature request"
+
+    title = issue.title.strip()
+    if _QUESTION_START.search(title.casefold()):
+        return "Question"
+
+    text = f"{title} {issue.body}".casefold()
+    if _BUG_TERMS.search(text):
+        return "Bug"
+    if _FEATURE_TERMS.search(text):
+        return "Feature request"
+    return "Other"
 
 
 def summarize_issue(body: str) -> str:

@@ -2,7 +2,7 @@ import requests
 import gradio as gr
 
 from app.github_client import MAX_ISSUES, fetch_issues
-from app.processor import find_similar_issues, summarize_issue
+from app.processor import classify_issue, find_similar_issues, summarize_issue
 
 
 def load_issues(repository: str, issue_limit: int) -> tuple[list[list[object]], str]:
@@ -15,6 +15,7 @@ def load_issues(repository: str, issue_limit: int) -> tuple[list[list[object]], 
     rows = [
         [
             issue.number,
+            classify_issue(issue),
             issue.title,
             summarize_issue(issue.body),
             "; ".join(
@@ -57,6 +58,7 @@ def create_app() -> gr.Blocks:
         issues_table = gr.Dataframe(
             headers=[
                 "#",
+                "Category",
                 "Title",
                 "Summary",
                 "Potential matches",
@@ -64,7 +66,16 @@ def create_app() -> gr.Blocks:
                 "Labels",
                 "URL",
             ],
-            datatype=["number", "str", "str", "str", "str", "str", "str"],
+            datatype=[
+                "number",
+                "str",
+                "str",
+                "str",
+                "str",
+                "str",
+                "str",
+                "str",
+            ],
             interactive=False,
             wrap=True,
             label="Open issues",
