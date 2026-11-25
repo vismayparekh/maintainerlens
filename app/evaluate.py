@@ -25,6 +25,7 @@ CSV_COLUMNS = (
     "expected_category",
     "duplicate_group",
 )
+MAX_EVALUATION_ISSUES = 40
 MetricItem = TypeVar("MetricItem", bound=Hashable)
 
 
@@ -128,8 +129,10 @@ def read_annotations(path: Path) -> list[Annotation]:
 
     if not annotations:
         raise ValueError("The annotation CSV has no issue rows.")
-    if len(annotations) > MAX_ISSUES:
-        raise ValueError(f"Evaluate at most {MAX_ISSUES} issues per CSV.")
+    if len(annotations) > MAX_EVALUATION_ISSUES:
+        raise ValueError(
+            f"Evaluate at most {MAX_EVALUATION_ISSUES} issues per CSV."
+        )
     return annotations
 
 

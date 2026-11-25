@@ -19,3 +19,10 @@ psf/requests,7630,Incorrect type annotation for iter_lines,https://github.com/ps
 psf/requests,7629,proxy_bypass_registry uses unanchored re.match (Windows proxy bypass),https://github.com/psf/requests/issues/7629,Bug,
 psf/requests,7627,Docstring examples in `from_key_val_list` show the pre-3.12 OrderedDict repr,https://github.com/psf/requests/issues/7627,Other,
 psf/requests,7620,PR 5410 got merged but is not in fact merged,https://github.com/psf/requests/issues/7620,Question,
+numpy/numpy,28967,BUG: Matmul warning message incorrectly produced when matrices are large,https://github.com/numpy/numpy/issues/28967,Bug,matmul-warnings
+numpy/numpy,28790,BUG: matmul warnings apple silicon,https://github.com/numpy/numpy/issues/28790,Bug,matmul-warnings
+numpy/numpy,24428,Questions about pep3118 format strings,https://github.com/numpy/numpy/issues/24428,Question,
+scikit-learn/scikit-learn,13727,Is there any possibility to visualize the SGDClassifier results?,https://github.com/scikit-learn/scikit-learn/issues/13727,Question,
+numpy/numpy,33321,ENH: np.vecdot should not call out to BLAS for small vectors,https://github.com/numpy/numpy/issues/33321,Feature request,
+numpy/numpy,33270,ENH: let user DTypes convert Python scalars using the resolved descriptor,https://github.com/numpy/numpy/issues/33270,Feature request,
+numpy/numpy,33365,Promoting Emscripten/Pyodide to a Tier 2 platform: supplementary information,https://github.com/numpy/numpy/issues/33365,Feature request,
