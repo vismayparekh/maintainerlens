@@ -34,6 +34,33 @@ The Category column first checks recognized GitHub labels, then uses common
 keywords in the issue title and body to suggest Bug, Question, Feature request,
 or Other. This is a rule-based baseline, not a trained classifier.
 
+## Evaluate the baseline
+
+Create a CSV of recent issues to label:
+
+```bash
+python -m app.evaluate export psf/requests --limit 20 \
+  --output data/evaluation/psf-requests.csv
+```
+
+In the CSV, fill `expected_category` with `Bug`, `Question`, `Feature request`,
+or `Other` (use Bug for broken behavior, Question for help requests, Feature
+request for new capabilities, and Other for the rest). Use the same
+`duplicate_group` value for issues you confirm are duplicates; leave it blank
+for issues that are not duplicates. The scorer fetches issue text from GitHub
+by number and does not store issue bodies in the CSV. It ignores existing
+GitHub labels when scoring categories so the text baseline is evaluated
+independently.
+
+Run the evaluation after annotating the rows:
+
+```bash
+python -m app.evaluate score data/evaluation/psf-requests.csv
+```
+
+The report includes category accuracy, per-category precision/recall/F1, and
+similar-issue pair precision/recall/F1.
+
 ## Run tests
 
 ```bash

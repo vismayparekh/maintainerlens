@@ -7,8 +7,10 @@ from app.github_client import GitHubIssue
 MAX_SUMMARY_LENGTH = 240
 SIMILARITY_THRESHOLD = 0.2
 MAX_SIMILAR_ISSUES = 3
+ISSUE_CATEGORIES = ("Bug", "Question", "Feature request", "Other")
 _BUG_TERMS = re.compile(
-    r"\b(?:bug|crash(?:es|ed)?|error|exception|regression|broken|fail(?:s|ed)?|failure)\b"
+    r"\b(?:bug|crash(?:es|ed)?|error|exception|regression|broken|"
+    r"fail(?:s|ed)?|failure)\b"
 )
 _FEATURE_TERMS = re.compile(
     r"\b(?:feature request|new feature|feature|enhancement|add support|support for|"
@@ -32,18 +34,19 @@ class SimilarityMatch:
     score: float
 
 
-def classify_issue(issue: GitHubIssue) -> str:
-    label_tokens = {
-        token
-        for label in issue.labels
-        for token in re.findall(r"[a-z0-9]+", label.casefold())
-    }
-    if "bug" in label_tokens:
-        return "Bug"
-    if "question" in label_tokens:
-        return "Question"
-    if {"feature", "enhancement"} & label_tokens:
-        return "Feature request"
+def classify_issue(issue: GitHubIssue, *, use_labels: bool = True) -> str:
+    if use_labels:
+        label_tokens = {
+            token
+            for label in issue.labels
+            for token in re.findall(r"[a-z0-9]+", label.casefold())
+        }
+        if "bug" in label_tokens:
+            return "Bug"
+        if "question" in label_tokens:
+            return "Question"
+        if {"feature", "enhancement"} & label_tokens:
+            return "Feature request"
 
     title = issue.title.strip()
     if _QUESTION_START.search(title.casefold()):

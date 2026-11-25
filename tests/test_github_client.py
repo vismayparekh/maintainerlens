@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from app.github_client import fetch_issues
+from app.github_client import fetch_issue_by_number, fetch_issues
 
 
 class FetchIssuesTests(unittest.TestCase):
@@ -39,16 +39,49 @@ class FetchIssuesTests(unittest.TestCase):
         self.assertEqual([issue.number for issue in issues], [12, 14])
         self.assertEqual(issues[0].labels, ("bug",))
         self.assertEqual(issues[1].body, "")
-        self.assertEqual(get.call_args.args[0], "https://api.github.com/repos/acme/project/issues")
+        self.assertEqual(
+            get.call_args.args[0],
+            "https://api.github.com/repos/acme/project/issues",
+        )
         self.assertEqual(get.call_args.kwargs["params"]["state"], "open")
         response.raise_for_status.assert_called_once_with()
 
     @patch("app.github_client.requests.get")
-    def test_rejects_invalid_repository_and_limit_without_requesting(self, get: Mock) -> None:
+    def test_rejects_invalid_repository_and_limit_without_requesting(
+        self, get: Mock
+    ) -> None:
         with self.assertRaises(ValueError):
             fetch_issues("https://example.com/acme/project")
         with self.assertRaises(ValueError):
             fetch_issues("acme/project", limit=21)
+
+        get.assert_not_called()
+
+    @patch("app.github_client.requests.get")
+    def test_fetches_a_single_issue_by_number(self, get: Mock) -> None:
+        response = Mock()
+        response.json.return_value = {
+            "number": 42,
+            "title": "Issue title",
+            "body": "Issue body",
+            "labels": [{"name": "bug"}],
+            "html_url": "https://github.com/acme/project/issues/42",
+        }
+        get.return_value = response
+
+        issue = fetch_issue_by_number("acme/project", 42)
+
+        self.assertEqual(issue.number, 42)
+        self.assertEqual(
+            get.call_args.args[0],
+            "https://api.github.com/repos/acme/project/issues/42",
+        )
+        response.raise_for_status.assert_called_once_with()
+
+    @patch("app.github_client.requests.get")
+    def test_rejects_invalid_issue_number_without_requesting(self, get: Mock) -> None:
+        with self.assertRaises(ValueError):
+            fetch_issue_by_number("acme/project", 0)
 
         get.assert_not_called()
 
