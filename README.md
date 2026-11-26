@@ -117,6 +117,46 @@ python -m app.pr_benchmark score \
   data/evaluation/pr-review-development-grades.csv
 ```
 
+### Collect human PR feedback in Argilla
+
+Install the optional SDK with `python -m pip install -r requirements-argilla.txt`.
+Use an Argilla 2.8 server and set `ARGILLA_API_URL` and `ARGILLA_API_KEY` for
+its owner account. See the [Argilla deployment guide](https://docs.argilla.io/latest/getting_started/how-to-deploy-argilla-with-docker/)
+for another machine. The local setup in this workspace is available at
+`http://127.0.0.1:6900` and keeps its login in the ignored
+`.cache/argilla-local/credentials.env` file.
+After a restart of this machine, run `bash .cache/argilla-local/start-local.sh`
+from the project root to bring the existing local review server back up.
+
+Import the same captured PRs and generated briefs used in the benchmark:
+
+```bash
+# With the workspace's local Argilla server
+source .cache/argilla-local/credentials.env
+python -m app.argilla_feedback import \
+  --snapshot data/evaluation/snapshots/pr-review-development.json \
+  --run data/evaluation/snapshots/pr-review-development-run-1.jsonl
+```
+
+Open **maintainerlens / pr-review-development** in Argilla. Score change
+accuracy, author intent, and actionable review checks from 0 to 2. Enter a
+replacement checklist if you would change the generated one, or use notes for
+summary corrections. Import uses only the captured PR data and generated
+briefs, so benchmark grades stay out of the annotation interface. Running the
+same import again keeps the existing records and responses.
+Use a different `--dataset` name when importing a new benchmark run.
+
+Export submitted reviews to a fresh filename:
+
+```bash
+python -m app.argilla_feedback export \
+  --output data/evaluation/snapshots/pr-review-human-grades.csv
+```
+
+The CSV contains one row per reviewer and PR. When multiple people annotate,
+use `--reviewer-id` to export one reviewer for `app.pr_benchmark score`.
+Compare those scores with the development grade sheet after the blind review.
+
 ### Background semantic matches
 
 To enable hybrid related-issue search in the Vue dashboard, install the optional
