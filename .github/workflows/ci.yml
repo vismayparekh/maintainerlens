@@ -38,6 +38,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          npm run build:demo
       - name: Build Docker demo
         run: docker build -t maintainerlens-ci .
       - name: Smoke-test Docker demo

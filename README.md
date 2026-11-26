@@ -2,6 +2,28 @@
 
 AI assistant for triaging GitHub issues and preparing pull request reviews.
 
+## Portfolio demo
+
+[Open the hosted MaintainerLens demo](https://huggingface.co/spaces/vismayparekh/maintainerlens-demo).
+
+The static Vue build shows curated issues and pull requests from scikit-learn
+and pandas, one related-issue match from the development benchmark, saved PR
+briefs, and an assistant-reviewed reply example. It also shows the measured
+classification, duplicate-retrieval, and PR checklist results. Descriptions
+are paraphrased and link to the original public GitHub records.
+
+Build and preview the portfolio version locally without starting FastAPI:
+
+```bash
+cd frontend
+npm ci
+npm run build:demo
+npm run preview -- --outDir dist-demo
+```
+
+The portfolio build runs in the browser with bundled examples. The Docker
+app below provides live GitHub loading, new AI suggestions, and review storage.
+
 ## Run the Docker demo
 
 Build the image and open the dashboard at `http://127.0.0.1:7860`:
