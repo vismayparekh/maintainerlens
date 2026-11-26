@@ -1,0 +1,9 @@
+order,repository,issue_number,issue_url,mode
+1,pandas-dev/pandas,72353,https://github.com/pandas-dev/pandas/issues/72353,manual
+2,pandas-dev/pandas,72276,https://github.com/pandas-dev/pandas/issues/72276,assisted
+3,pandas-dev/pandas,72326,https://github.com/pandas-dev/pandas/issues/72326,assisted
+4,pandas-dev/pandas,72296,https://github.com/pandas-dev/pandas/issues/72296,manual
+5,pydantic/pydantic,14397,https://github.com/pydantic/pydantic/issues/14397,assisted
+6,pydantic/pydantic,14371,https://github.com/pydantic/pydantic/issues/14371,manual
+7,pydantic/pydantic,14275,https://github.com/pydantic/pydantic/issues/14275,manual
+8,pydantic/pydantic,14323,https://github.com/pydantic/pydantic/issues/14323,assisted

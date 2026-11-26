@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import requests
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator
 
 from app.github_client import (
@@ -22,9 +22,11 @@ from app.llm_client import (
     IssueAnalysisError,
     IssueAnalysisNotConfiguredError,
     analyze_issue,
+    draft_issue_reply,
 )
 from app.processor import SimilarityMatch, classify_issue, find_similar_issues
 from app.review_store import ReviewStoreError, export_reviews_csv, save_review
+from app.reply_reviews import ReplyTrial, export_reply_trials, save_reply_trial
 from app.semantic_retrieval import EmbeddingCache, find_semantic_fallbacks
 
 IssueCategory = Literal["Bug", "Question", "Feature request", "Other"]
@@ -85,14 +87,10 @@ class AnalyzeIssueResponse(BaseModel):
     summary_truncated: bool
 
 
-class ReviewRequest(BaseModel):
+class IssueReference(BaseModel):
     issue_number: int = Field(ge=1)
     issue_title: str = Field(min_length=1, max_length=500)
     issue_url: AnyHttpUrl
-    ai_summary: str = Field(min_length=1, max_length=500)
-    ai_category: IssueCategory
-    reviewed_summary: str = Field(min_length=1, max_length=500)
-    reviewed_category: IssueCategory
 
     @field_validator("issue_url")
     @classmethod
@@ -105,6 +103,37 @@ class ReviewRequest(BaseModel):
         if parsed.path.strip("/").split("/")[2] != "issues":
             raise ValueError("Issue URL must point to a repository issue.")
         return value
+
+
+class ReviewRequest(IssueReference):
+    ai_summary: str = Field(min_length=1, max_length=500)
+    ai_category: IssueCategory
+    reviewed_summary: str = Field(min_length=1, max_length=500)
+    reviewed_category: IssueCategory
+
+
+class ReplyDraftRequest(AnalyzeIssueRequest):
+    related_issues: list[IssueReference] = Field(default_factory=list, max_length=3)
+
+    @field_validator("related_issues")
+    @classmethod
+    def require_matching_issue_links(cls, issues: list[IssueReference]) -> list[IssueReference]:
+        for issue in issues:
+            url = issue.issue_url
+            if (url.path or "").rstrip("/").split("/")[-1] != str(issue.issue_number):
+                raise ValueError("A related issue URL must match its issue number.")
+            if url.query or url.fragment or len(str(url)) > 240:
+                raise ValueError("Use a direct GitHub issue URL for each related issue.")
+        return issues
+
+
+class ReplyDraftResponse(BaseModel):
+    reply: str
+    checklist: list[str]
+
+
+class ReplyReviewRequest(IssueReference, ReplyTrial):
+    pass
 
 
 class ReviewResponse(BaseModel):
@@ -271,6 +300,53 @@ def save_issue_review(request: ReviewRequest) -> ReviewResponse:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return ReviewResponse(message="Review saved locally.")
+
+
+@app.post("/api/issues/draft-reply", response_model=ReplyDraftResponse)
+def draft_repository_reply(request: ReplyDraftRequest) -> ReplyDraftResponse:
+    try:
+        draft = draft_issue_reply(
+            request.title,
+            request.body,
+            [(issue.issue_number, issue.issue_title) for issue in request.related_issues],
+        )
+    except IssueAnalysisNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except IssueAnalysisError:
+        raise HTTPException(status_code=502, detail="The AI reply could not be generated. Please retry.") from None
+
+    known_links = {issue.issue_number: issue.issue_url for issue in request.related_issues}
+    links = [
+        f"[#{number}]({known_links[number]})"
+        for number in dict.fromkeys(draft.related_issue_numbers) if number in known_links
+    ]
+    reply = draft.reply
+    if links:
+        reply += "\n\nPossibly related: " + ", ".join(links) + "."
+    return ReplyDraftResponse(reply=reply, checklist=draft.checklist)
+
+
+@app.post("/api/reply-reviews", response_model=ReviewResponse)
+def save_reply_review(request: ReplyReviewRequest) -> ReviewResponse:
+    issue = GitHubIssue(request.issue_number, request.issue_title, "", (), str(request.issue_url))
+    try:
+        save_reply_trial(issue, request)
+    except ReviewStoreError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return ReviewResponse(message="Reply review saved locally.")
+
+
+@app.get("/api/reply-reviews/export")
+def download_reply_reviews() -> Response:
+    try:
+        export = export_reply_trials()
+    except ReviewStoreError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return Response(
+        export,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="maintainer_reply_trials.csv"'},
+    )
 
 
 @app.get("/api/reviews/export")

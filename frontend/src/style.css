@@ -1117,6 +1117,12 @@ a {
   gap: 14px;
 }
 
+.reply-mode-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .review-message {
   color: #398074;
   font-size: 10px;
@@ -1233,6 +1239,12 @@ a {
   margin: 0 5px;
   color: #53a092;
   font-style: normal;
+}
+
+.review-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
 }
 
 .text-button {

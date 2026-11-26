@@ -23,8 +23,16 @@ const analysis = ref(null)
 const reviewedSummary = ref('')
 const reviewedCategory = ref('')
 const reviewMessage = ref('')
+const replyTrial = ref(null)
+const replyText = ref('')
+const replyChecklist = ref('')
+const replyLoading = ref(false)
+const replySaving = ref(false)
+const replyMessage = ref('')
+const exportError = ref('')
 let analysisRequest = null
 let relatedRequest = null
+let replyRequest = null
 
 const selectedIssue = computed(
   () => issues.value.find((issue) => issue.number === selectedNumber.value) ?? null,
@@ -66,6 +74,7 @@ function categoryClass(category) {
 }
 
 function clearReview() {
+  clearReplyReview()
   analysisRequest?.abort()
   analysisRequest = null
   loadingAnalysis.value = false
@@ -74,6 +83,17 @@ function clearReview() {
   reviewedSummary.value = ''
   reviewedCategory.value = ''
   reviewMessage.value = ''
+}
+
+function clearReplyReview() {
+  replyRequest?.abort()
+  replyRequest = null
+  replyTrial.value = null
+  replyText.value = ''
+  replyChecklist.value = ''
+  replyLoading.value = false
+  replySaving.value = false
+  replyMessage.value = ''
 }
 
 function selectIssue(issue) {
@@ -216,21 +236,119 @@ async function saveReview() {
   }
 }
 
-async function downloadReviews() {
-  downloadingReviews.value = true
-  reviewMessage.value = ''
+async function startReplyTrial(mode) {
+  const issue = selectedIssue.value
+  if (!issue || replySaving.value) return
+  clearReplyReview()
+  replyTrial.value = {
+    id: crypto.randomUUID(),
+    mode,
+    startedAt: performance.now(),
+    original: null,
+    submission: null,
+    saved: false,
+  }
+  if (mode === 'manual') return
+
+  const request = new AbortController()
+  replyRequest = request
+  replyLoading.value = true
   try {
-    const response = await fetch('/api/reviews/export')
+    const response = await fetch('/api/issues/draft-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: request.signal,
+      body: JSON.stringify({
+        title: issue.title,
+        body: issue.body,
+        related_issues: issue.similar_issues.map((match) => ({
+          issue_number: match.number,
+          issue_title: match.title,
+          issue_url: match.url,
+        })),
+      }),
+    })
+    if (!response.ok) throw new Error(await responseMessage(response))
+    const draft = await response.json()
+    if (replyRequest !== request) return
+    replyText.value = draft.reply
+    replyChecklist.value = draft.checklist.map((step) => `- [ ] ${step}`).join('\n')
+    replyTrial.value.original = { reply: replyText.value, checklist: replyChecklist.value }
+  } catch (error) {
+    if (replyRequest !== request) return
+    replyTrial.value = null
+    replyMessage.value = error instanceof Error ? error.message : 'Could not draft the reply.'
+  } finally {
+    if (replyRequest === request) {
+      replyRequest = null
+      replyLoading.value = false
+    }
+  }
+}
+
+async function saveReplyReview() {
+  const issue = selectedIssue.value
+  const trial = replyTrial.value
+  if (!issue || !trial || trial.saved || replyLoading.value || replySaving.value || !replyText.value.trim()) return
+  trial.submission ??= {
+    trial_id: trial.id,
+    issue_number: issue.number,
+    issue_title: issue.title,
+    issue_url: issue.url,
+    mode: trial.mode,
+    duration_ms: Math.round(performance.now() - trial.startedAt),
+    original_reply: trial.original?.reply ?? null,
+    original_checklist: trial.original?.checklist ?? null,
+    reviewed_reply: replyText.value,
+    reviewed_checklist: replyChecklist.value,
+  }
+
+  replySaving.value = true
+  replyMessage.value = ''
+  try {
+    const response = await fetch('/api/reply-reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(trial.submission),
+    })
+    if (!response.ok) throw new Error(await responseMessage(response))
+    if (replyTrial.value !== trial) return
+    trial.saved = true
+    replyMessage.value = 'Reply review saved locally.'
+  } catch (error) {
+    if (replyTrial.value !== trial) return
+    replyMessage.value = error instanceof Error ? error.message : 'Could not save the reply review.'
+  } finally {
+    if (replyTrial.value === trial) replySaving.value = false
+  }
+}
+
+async function copyReply() {
+  const trial = replyTrial.value
+  try {
+    await navigator.clipboard.writeText(replyText.value)
+    if (replyTrial.value === trial) replyMessage.value = 'Reply copied.'
+  } catch {
+    if (replyTrial.value === trial) replyMessage.value = 'Could not copy. You can select the reply text manually.'
+  }
+}
+
+async function downloadReviews(kind) {
+  downloadingReviews.value = true
+  exportError.value = ''
+  const isReply = kind === 'reply'
+  try {
+    const response = await fetch(isReply ? '/api/reply-reviews/export' : '/api/reviews/export')
     if (!response.ok) throw new Error(await responseMessage(response))
     const blob = await response.blob()
     const objectUrl = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = objectUrl
-    link.download = 'maintainer_reviews.csv'
+    link.download = isReply ? 'maintainer_reply_trials.csv' : 'maintainer_reviews.csv'
     link.click()
     URL.revokeObjectURL(objectUrl)
   } catch (error) {
-    reviewMessage.value =
+    exportError.value =
       error instanceof Error ? error.message : 'Could not export saved reviews.'
   } finally {
     downloadingReviews.value = false
@@ -555,6 +673,49 @@ async function downloadReviews() {
               posted to GitHub.
             </p>
           </article>
+
+          <article class="panel review-panel">
+            <h3>Maintainer reply</h3>
+            <div class="review-actions reply-mode-actions">
+              <button
+                class="button button-secondary"
+                :disabled="replyLoading || replySaving"
+                @click="startReplyTrial('assisted')"
+              >{{ replyLoading ? 'Drafting reply…' : 'Generate reply draft' }}</button>
+              <button
+                class="button button-secondary"
+                :disabled="replySaving"
+                @click="startReplyTrial('manual')"
+              >Write from scratch</button>
+            </div>
+            <template v-if="replyTrial && !replyLoading">
+              <label class="review-field">
+                <span class="field-label">Reply</span>
+                <textarea v-model="replyText" rows="6" maxlength="3000" :readonly="Boolean(replyTrial.submission)" />
+              </label>
+              <label class="review-field">
+                <span class="field-label">Reproduction checklist</span>
+                <textarea
+                  v-model="replyChecklist"
+                  rows="4"
+                  maxlength="2000"
+                  :readonly="Boolean(replyTrial.submission)"
+                  placeholder="Leave blank if reproduction does not apply"
+                />
+              </label>
+              <div class="review-actions">
+                <button
+                  class="button button-primary"
+                  :disabled="replySaving || replyTrial.saved || !replyText.trim()"
+                  @click="saveReplyReview"
+                >{{ replySaving ? 'Saving reply…' : 'Save reply review' }}</button>
+                <button class="button button-secondary" :disabled="!replyText.trim()" @click="copyReply">
+                  Copy reply
+                </button>
+              </div>
+            </template>
+            <p v-if="replyMessage" class="review-message" role="status">{{ replyMessage }}</p>
+          </article>
         </section>
 
         <section v-else class="panel empty-detail">
@@ -581,10 +742,16 @@ async function downloadReviews() {
 
       <footer class="app-footer">
         <span>MAINTAINERLENS <i>·</i> AI-ASSISTED, HUMAN-REVIEWED</span>
-        <button class="text-button" :disabled="downloadingReviews" @click="downloadReviews">
-          {{ downloadingReviews ? 'Preparing export…' : 'Export saved reviews ↓' }}
-        </button>
+        <div class="review-export-actions">
+          <button class="text-button" :disabled="downloadingReviews" @click="downloadReviews('triage')">
+            Export saved reviews ↓
+          </button>
+          <button class="text-button" :disabled="downloadingReviews" @click="downloadReviews('reply')">
+            Export reply reviews ↓
+          </button>
+        </div>
       </footer>
+      <p v-if="exportError" class="review-message" role="status">{{ exportError }}</p>
     </main>
   </div>
 </template>

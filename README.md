@@ -117,6 +117,43 @@ does not prove a project defect. For troubleshooting questions where the
 behavior may come from setup, configuration, or an incorrect expectation, use
 Question unless a project defect is established.
 
+### Draft and review maintainer replies
+
+Select an issue and choose **Generate reply draft** or **Write from scratch**.
+Edit the reply and the reproduction checklist, then choose **Save reply review**
+to record them locally. Leave the checklist empty when reproduction does not
+apply. **Copy reply** copies the reply for manual use. MaintainerLens sends the
+selected issue text and up to three candidate issue titles and numbers to
+Hugging Face only when you request a draft. It adds links from those candidates
+when the model selects them. Replies are never posted automatically.
+
+**Export reply reviews** downloads the original draft, the edited text, and the
+elapsed time from starting either mode to clicking save. Assisted time includes
+provider latency. Reviews are stored in the local SQLite database alongside
+summary reviews. An issue can have more than one reply trial.
+
+### Compare reply drafting time
+
+1. Choose public issues of similar complexity and assign each issue to manual
+   or assisted mode before participants see it. Give both groups access to the
+   same issue descriptions and related issues. Alternate the mode order across
+   participants and give each participant each issue only once.
+2. Start the assigned mode at the same point in the review, then save when the
+   reply and checklist are ready. Record generation failures and abandoned
+   trials separately. The CSV contains completed trials.
+3. Export reply reviews. Have a reviewer check the final reply and checklist
+   against the issue, ideally without seeing the mode. Set `factual_error` to
+   `yes` or `no` for each reviewed row and leave unchecked rows blank.
+4. Run the report on the export for the trial cohort:
+
+   ```bash
+   python -m app.reply_benchmark ~/Downloads/maintainer_reply_trials.csv
+   ```
+
+The report shows median completion time per mode, the difference between
+medians, factual errors among checked trials, and assisted drafts accepted
+without edits. Collect human trials before reporting a time-savings result.
+
 ## Evaluate the baseline
 
 Create a CSV of recent issues to label:
