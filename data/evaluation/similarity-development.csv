@@ -1,0 +1,41 @@
+repository,number,title,url,duplicate_group
+numpy/numpy,16903,bincount fails for complex weights,https://github.com/numpy/numpy/issues/16903,bincount-complex
+numpy/numpy,23313,bincount does not accept complex valued weights,https://github.com/numpy/numpy/issues/23313,bincount-complex
+numpy/numpy,21091,"BUG: inf in quantile has undefined behaviour (and possibly different for -inf vs +inf)",https://github.com/numpy/numpy/issues/21091,quantile-infinity
+numpy/numpy,21932,"BUG: `np.percentile` gives unreasonable results when array contains `np.inf`",https://github.com/numpy/numpy/issues/21932,quantile-infinity
+numpy/numpy,19808,ENH: numpy bfloat16 support,https://github.com/numpy/numpy/issues/19808,bfloat16-support
+numpy/numpy,21007,ENH: Bfloat16 support,https://github.com/numpy/numpy/issues/21007,bfloat16-support
+numpy/numpy,21614,ENH: bfloat16 support.,https://github.com/numpy/numpy/issues/21614,bfloat16-support
+scikit-learn/scikit-learn,19416,KBinsDiscretizer creates wrong bins,https://github.com/scikit-learn/scikit-learn/issues/19416,kbins-discretizer-small-bins
+scikit-learn/scikit-learn,19433,KBinsDiscretizer produces wrong bins with repeated small values,https://github.com/scikit-learn/scikit-learn/issues/19433,kbins-discretizer-small-bins
+scikit-learn/scikit-learn,19178,Nystroem has misleading parts makes precomputed kernel seemingly possible.,https://github.com/scikit-learn/scikit-learn/issues/19178,nystroem-precomputed-kernel
+scikit-learn/scikit-learn,29353,kernel_approximation.Nystroem with precomputed kernel,https://github.com/scikit-learn/scikit-learn/issues/29353,nystroem-precomputed-kernel
+psf/requests,7642,"Invalid `params` type (e.g. int) raises misleading ""TypeError: Cannot mix str and non-str arguments""",https://github.com/psf/requests/issues/7642,
+psf/requests,7643,"parse_header_links drops parameters when a value contains '=' or a quoted ';'",https://github.com/psf/requests/issues/7643,
+psf/requests,7644,"get_encoding_from_headers treats any content type containing 'text' as text/* (ISO-8859-1)",https://github.com/psf/requests/issues/7644,
+psf/requests,7647,"get_encoding_from_headers is case-sensitive to media type tokens (RFC 9110 §8.3.1)",https://github.com/psf/requests/issues/7647,
+pandas-dev/pandas,60561,BUG: set_index with pyarrow timestamp type does not produce DatetimeIndex,https://github.com/pandas-dev/pandas/issues/60561,pandas-pyarrow-datetime-index
+pandas-dev/pandas,63526,"BUG: `.loc` slicing fails on PyArrow-backed date index",https://github.com/pandas-dev/pandas/issues/63526,pandas-pyarrow-datetime-index
+pandas-dev/pandas,63527,BUG: PyArrow-backed datetime index missing numpy-like attributes,https://github.com/pandas-dev/pandas/issues/63527,pandas-pyarrow-datetime-index
+pandas-dev/pandas,53643,BUG: Timedelta with non-ns unit does not add correctly to stdlib datetime.datetime,https://github.com/pandas-dev/pandas/issues/53643,pandas-timedelta-units
+pandas-dev/pandas,62310,BUG: Addition/subtracting `pd.Timedelta` constructed from hour offset gives wrong results,https://github.com/pandas-dev/pandas/issues/62310,pandas-timedelta-units
+pandas-dev/pandas,58328,"BUG: incorrect assumption of full-name month format when ""May"" is initial month",https://github.com/pandas-dev/pandas/issues/58328,pandas-may-datetime-parsing
+pandas-dev/pandas,62084,"BUG: Pandas to_datetime parsing error with ""May"" month",https://github.com/pandas-dev/pandas/issues/62084,pandas-may-datetime-parsing
+pandas-dev/pandas,60774,BUG: datetime64 column type fails parquet round trip,https://github.com/pandas-dev/pandas/issues/60774,pandas-datetime-parquet-roundtrip
+pandas-dev/pandas,61165,"BUG: `datetime64[s]` fails round trip using `.to_parquet` and `read_parquet`",https://github.com/pandas-dev/pandas/issues/61165,pandas-datetime-parquet-roundtrip
+scipy/scipy,16142,ENH: Fix the random state in `scipy.stats.multivariate_normal.cdf()`,https://github.com/scipy/scipy/issues/16142,scipy-multivariate-normal-random-state
+scipy/scipy,23634,BUG: stats.multivariate_normal: produces different result with the same seed,https://github.com/scipy/scipy/issues/23634,scipy-multivariate-normal-random-state
+scipy/scipy,23462,BUG: sparse: load_npz fails for coo_arry with dim>2,https://github.com/scipy/scipy/issues/23462,scipy-coo-sparse-array-serialization
+scipy/scipy,23605,BUG: COO sparse array does not save/load correctly for >2D,https://github.com/scipy/scipy/issues/23605,scipy-coo-sparse-array-serialization
+scipy/scipy,22929,"BUG: spatial.distance.squareform: array elements with object dtype are incorrectly refcounted",https://github.com/scipy/scipy/issues/22929,scipy-squareform-object-dtype
+scipy/scipy,23560,"BUG: `squareform` with `dtype=object` array containing `np.float64` causes segmentation fault",https://github.com/scipy/scipy/issues/23560,scipy-squareform-object-dtype
+matplotlib/matplotlib,27590,[Bug]: Qt5 backend icons should be white when macOS in dark mode,https://github.com/matplotlib/matplotlib/issues/27590,matplotlib-qt5-dark-mode-icons
+matplotlib/matplotlib,30564,[Bug]: Qt5Agg icon remains black in dark mode,https://github.com/matplotlib/matplotlib/issues/30564,matplotlib-qt5-dark-mode-icons
+matplotlib/matplotlib,29806,[Feature Request] Proper Arabic Language Support in Matplotlib Plots,https://github.com/matplotlib/matplotlib/issues/29806,matplotlib-rtl-text
+matplotlib/matplotlib,30557,"[Bug]: Add native RTL (right-to-left) text rendering support for Hebrew and Arabic",https://github.com/matplotlib/matplotlib/issues/30557,matplotlib-rtl-text
+matplotlib/matplotlib,29373,[Bug]: Poor rendering of Poly3DCollection with axlim clipping,https://github.com/matplotlib/matplotlib/issues/29373,matplotlib-poly3d-axlim-clipping
+matplotlib/matplotlib,30524,[Bug]: 3D bar chart unexpected behavior when using axlim_clip and set_zlim,https://github.com/matplotlib/matplotlib/issues/30524,matplotlib-poly3d-axlim-clipping
+matplotlib/matplotlib,25572,[Bug]: Artist.remove() isn't fully removing it from figure,https://github.com/matplotlib/matplotlib/issues/25572,matplotlib-widget-removal
+matplotlib/matplotlib,30325,[Bug]: fig.savefig throws error after radiobutton axes is removed,https://github.com/matplotlib/matplotlib/issues/30325,matplotlib-widget-removal
+matplotlib/matplotlib,30022,[Doc]: matplotlib.figure.Figure.subplots_adjust figure,https://github.com/matplotlib/matplotlib/issues/30022,matplotlib-subplots-adjustment-doc
+matplotlib/matplotlib,30182,[Doc]: misleading diagram in matplotlib.figure.Figure.subplots_adjust,https://github.com/matplotlib/matplotlib/issues/30182,matplotlib-subplots-adjustment-doc

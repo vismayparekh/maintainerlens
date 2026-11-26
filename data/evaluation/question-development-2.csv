@@ -1,0 +1,13 @@
+repository,number,title,url,expected_category,duplicate_group
+psf/requests,6904,Compatibility with Python 3.13,https://github.com/psf/requests/issues/6904,Question,
+psf/requests,6858,Unable to remove default content-length header field,https://github.com/psf/requests/issues/6858,Question,
+psf/requests,6798,Environment variables take precedence over the explicitly passed proxies argument in session.get(),https://github.com/psf/requests/issues/6798,Question,
+psf/requests,6788,Any ipv6 request spuriously stays stuck for a long time sometimes never progressing,https://github.com/psf/requests/issues/6788,Question,
+numpy/numpy,30884,BUG: f2py Arguments order in Python is different from Fortran,https://github.com/numpy/numpy/issues/30884,Bug,
+numpy/numpy,29933,Issue in dot product,https://github.com/numpy/numpy/issues/29933,Question,
+numpy/numpy,29722,BUG (?): numpy random choice doesn't select values according to probabilities,https://github.com/numpy/numpy/issues/29722,Bug,
+numpy/numpy,29352,BUG: numpy very slow after import torch,https://github.com/numpy/numpy/issues/29352,Bug,
+scikit-learn/scikit-learn,23628,Running pipeline.fit automatically runs pipeline.transform,https://github.com/scikit-learn/scikit-learn/issues/23628,Question,
+scikit-learn/scikit-learn,23627,Anomalous result in PLS,https://github.com/scikit-learn/scikit-learn/issues/23627,Bug,
+scikit-learn/scikit-learn,22125,Unable to load pickled KernelDensity in 1.0.2 that was pickled with an earlier version of scikit-learn installed,https://github.com/scikit-learn/scikit-learn/issues/22125,Bug,
+scikit-learn/scikit-learn,20234,Cannot save items in a defaultdict in the scorer of a GridSearchCV with joblib backend,https://github.com/scikit-learn/scikit-learn/issues/20234,Question,

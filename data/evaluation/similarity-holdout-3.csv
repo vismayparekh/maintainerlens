@@ -1,0 +1,41 @@
+repository,number,title,url,duplicate_group
+pytest-dev/pytest,6948,"""fixture not found"" when test suite is network-mounted on Windows VM.",https://github.com/pytest-dev/pytest/issues/6948,pytest-6948-7678
+pytest-dev/pytest,7678,ImportPathMismatchError when on UNC path,https://github.com/pytest-dev/pytest/issues/7678,pytest-6948-7678
+pytest-dev/pytest,9335,collection fails when `jsonschema` is imported (DegenerateFiles),https://github.com/pytest-dev/pytest/issues/9335,pytest-9335-9169
+pytest-dev/pytest,9169,AssertionRewritingHook should support get_resource_reader,https://github.com/pytest-dev/pytest/issues/9169,pytest-9335-9169
+pytest-dev/pytest,9198,Class scope fixture not working with indirect parametrization since 5.4.0,https://github.com/pytest-dev/pytest/issues/9198,pytest-9198-6962
+pytest-dev/pytest,6962,Parametrized fixtures being incorrectly re-instantiated,https://github.com/pytest-dev/pytest/issues/6962,pytest-9198-6962
+pydantic/pydantic,9532,`TypeAdapter` with Union has `Any` type hint argument starting with Pydantic 2.7.0+,https://github.com/pydantic/pydantic/issues/9532,pydantic-9532-9147
+pydantic/pydantic,9147,Using TypeAdapter with PyRight has typing issues,https://github.com/pydantic/pydantic/issues/9147,pydantic-9532-9147
+pydantic/pydantic,11882,AssertionError: Internal error: unresolved placeholder type,https://github.com/pydantic/pydantic/issues/11882,pydantic-11882-11025
+pydantic/pydantic,11025,Mypy internal error when subclassing a generic model with a recursive type variable,https://github.com/pydantic/pydantic/issues/11025,pydantic-11882-11025
+pydantic/pydantic,4566,Dataclass with generic discriminator field raises error,https://github.com/pydantic/pydantic/issues/4566,pydantic-4566-1256
+pydantic/pydantic,1256,Generic dataclass support,https://github.com/pydantic/pydantic/issues/1256,pydantic-4566-1256
+pydantic/pydantic,10282,Cython methods are not ignored when checking field annotations,https://github.com/pydantic/pydantic/issues/10282,pydantic-10282-6670
+pydantic/pydantic,6670,Cython functions are considered non-annotated attributes,https://github.com/pydantic/pydantic/issues/6670,pydantic-10282-6670
+pytorch/pytorch,177734,[MPS] Incorrect gradients for `torch.bmm` with `complex64` tensors,https://github.com/pytorch/pytorch/issues/177734,pytorch-177734-177474
+pytorch/pytorch,177474,using conj inside einsum on MPS returns incorrect result,https://github.com/pytorch/pytorch/issues/177474,pytorch-177734-177474
+pytorch/pytorch,203803,[Bug] F.group_norm(num_groups=0) raises ZeroDivisionError before native validation,https://github.com/pytorch/pytorch/issues/203803,pytorch-203803-184280
+pytorch/pytorch,184280,GroupNorm with num_groups=0 raises ZeroDivisionError instead of ValueError,https://github.com/pytorch/pytorch/issues/184280,pytorch-203803-184280
+pytorch/pytorch,98498,"Higher order derivatives not working when setting compute device to `torch.device(""mps"")`",https://github.com/pytorch/pytorch/issues/98498,pytorch-98498-88893
+pytorch/pytorch,88893,RuntimeError: derivative for aten::mps_max_pool2d_backward is not implemented,https://github.com/pytorch/pytorch/issues/88893,pytorch-98498-88893
+pytorch/pytorch,202764,MPS: conv2d silently returns uninitialized memory when batch > 65536 (2.11 through main),https://github.com/pytorch/pytorch/issues/202764,pytorch-202764-200935
+pytorch/pytorch,200935,"[MPS] conv2d, conv_transpose1d and conv_transpose2d silently return wrong results when batch size ≥ 65536 (fp32)",https://github.com/pytorch/pytorch/issues/200935,pytorch-202764-200935
+scikit-image/scikit-image,4539,Contributing guide: add instructions for adding a new demo dataset using pooch,https://github.com/scikit-image/scikit-image/issues/4539,scikit-image-4539-4522
+scikit-image/scikit-image,4522,Document pooch for dev and users,https://github.com/scikit-image/scikit-image/issues/4522,scikit-image-4539-4522
+scikit-image/scikit-image,2988,Adding target number of points to skimage.measure.approximate_polygon,https://github.com/scikit-image/scikit-image/issues/2988,scikit-image-2988-2212
+scikit-image/scikit-image,2212,Implement `num_edges` support for `measure.approximate_polygon`,https://github.com/scikit-image/scikit-image/issues/2212,scikit-image-2988-2212
+scikit-image/scikit-image,2530,Normalized cut error on Py 36,https://github.com/scikit-image/scikit-image/issues/2530,scikit-image-2530-2450
+scikit-image/scikit-image,2450,Failure in test_ncut_stable_subgraph on Python 3.6,https://github.com/scikit-image/scikit-image/issues/2450,scikit-image-2530-2450
+scikit-image/scikit-image,2148,RAG example incomplete,https://github.com/scikit-image/scikit-image/issues/2148,scikit-image-2148-2099
+scikit-image/scikit-image,2099,Add description to RAG's merging example,https://github.com/scikit-image/scikit-image/issues/2099,scikit-image-2148-2099
+mwaskom/seaborn,3001,Possible inconsistency in boxenplot thicknesses and shading,https://github.com/mwaskom/seaborn/issues/3001,seaborn-3001-2517
+mwaskom/seaborn,2517,Boxenplot styling differs depending on the k_depth option,https://github.com/mwaskom/seaborn/issues/2517,seaborn-3001-2517
+mwaskom/seaborn,1894,"Seaborn Distplot ""misses"" some values on the x axis ",https://github.com/mwaskom/seaborn/issues/1894,seaborn-1894-327
+mwaskom/seaborn,327,Artificial gaps when plotting discrete data in distplot,https://github.com/mwaskom/seaborn/issues/327,seaborn-1894-327
+mwaskom/seaborn,3073,pairplot fails with matplotlib 3.6.1,https://github.com/mwaskom/seaborn/issues/3073,seaborn-3073-3072
+mwaskom/seaborn,3072,Bug: StopIteration error in histplot,https://github.com/mwaskom/seaborn/issues/3072,seaborn-3073-3072
+pandas-dev/pandas,70748,BUG: describe() raises for numeric ExtensionArrays whose scalars can't be cast to float (e.g. pint-pandas),https://github.com/pandas-dev/pandas/issues/70748,pandas-70748-61707
+pandas-dev/pandas,61707,BUG: .describe() doesn't work for EAs,https://github.com/pandas-dev/pandas/issues/61707,pandas-70748-61707
+pandas-dev/pandas,54677,ENH: add `atol` to pd.DataFrame.compare(),https://github.com/pandas-dev/pandas/issues/54677,pandas-54677-48488
+pandas-dev/pandas,48488,ENH: df.compare should have tolerances,https://github.com/pandas-dev/pandas/issues/48488,pandas-54677-48488

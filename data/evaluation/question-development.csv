@@ -1,0 +1,11 @@
+repository,number,title,url,expected_category,duplicate_group
+psf/requests,6903,Help with POST request with XML payload,https://github.com/psf/requests/issues/6903,Question,
+psf/requests,6979,thread safe connection pool,https://github.com/psf/requests/issues/6979,Question,
+psf/requests,6932,[Query] Is there any plan to release out a new version of requests lib in 2025?,https://github.com/psf/requests/issues/6932,Question,
+psf/requests,6832,CURL and Requests.session() returning different values during SSL and CA verification,https://github.com/psf/requests/issues/6832,Question,
+numpy/numpy,29625,Is numpy.count_nonzero supposed to work like this?,https://github.com/numpy/numpy/issues/29625,Question,
+numpy/numpy,31031,Status of SWIG support,https://github.com/numpy/numpy/issues/31031,Question,
+numpy/numpy,28950,order of individual FFTs for calculating `numpy.fft.irfftn`,https://github.com/numpy/numpy/issues/28950,Question,
+scikit-learn/scikit-learn,19662,LogisticRegression is multithreading -- why and how? Can it be turned off?,https://github.com/scikit-learn/scikit-learn/issues/19662,Question,
+scikit-learn/scikit-learn,19189,GPR (GaussianProcessRegressor) warning questions in sklearn,https://github.com/scikit-learn/scikit-learn/issues/19189,Question,
+scikit-learn/scikit-learn,19452,[QUESTION] precision_recall_curve with softmax output and 0 label as positive class,https://github.com/scikit-learn/scikit-learn/issues/19452,Question,

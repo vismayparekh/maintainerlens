@@ -1,18 +1,24 @@
+import os
 import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 import requests
+from dotenv import load_dotenv
 
 API_URL = "https://api.github.com"
 MAX_ISSUES = 20
+MAX_HISTORICAL_ISSUES = 100
 REQUEST_TIMEOUT = 15
+_ISSUE_PAGE_SIZE = 100
 _REPOSITORY_PART = re.compile(r"[A-Za-z0-9_.-]+\Z")
 _API_HEADERS = {
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "MaintainerLens",
 }
+
+load_dotenv()
 
 
 @dataclass(frozen=True)
@@ -22,6 +28,14 @@ class GitHubIssue:
     body: str
     labels: tuple[str, ...]
     url: str
+
+
+def _request_headers() -> dict[str, str]:
+    headers = _API_HEADERS.copy()
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
 
 
 def _repository_slug(repository: str) -> str:
@@ -83,6 +97,54 @@ def _parse_issue(item: dict[str, object]) -> GitHubIssue:
     )
 
 
+def _fetch_repository_issues(
+    repository: str,
+    *,
+    state: str,
+    sort: str,
+    limit: int,
+) -> list[GitHubIssue]:
+    slug = _repository_slug(repository)
+    issues: list[GitHubIssue] = []
+    page = 1
+    while len(issues) < limit:
+        response = requests.get(
+            f"{API_URL}/repos/{slug}/issues",
+            params={
+                "state": state,
+                "sort": sort,
+                "direction": "desc",
+                "per_page": _ISSUE_PAGE_SIZE,
+                "page": page,
+            },
+            headers=_request_headers(),
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise ValueError("GitHub returned an unexpected issues response.")
+        if not payload:
+            break
+
+        for item in payload:
+            if not isinstance(item, dict):
+                raise ValueError("GitHub returned an unexpected issue.")
+            if "pull_request" in item:
+                continue
+
+            issues.append(_parse_issue(item))
+            if len(issues) == limit:
+                break
+
+        if len(payload) < _ISSUE_PAGE_SIZE:
+            break
+        page += 1
+
+    return issues
+
+
 def fetch_issues(repository: str, limit: int = 10) -> list[GitHubIssue]:
     if (
         isinstance(limit, bool)
@@ -91,36 +153,33 @@ def fetch_issues(repository: str, limit: int = 10) -> list[GitHubIssue]:
     ):
         raise ValueError(f"Issue limit must be between 1 and {MAX_ISSUES}.")
 
-    slug = _repository_slug(repository)
-    response = requests.get(
-        f"{API_URL}/repos/{slug}/issues",
-        params={
-            "state": "open",
-            "sort": "created",
-            "direction": "desc",
-            "per_page": 100,
-        },
-        headers=_API_HEADERS,
-        timeout=REQUEST_TIMEOUT,
+    return _fetch_repository_issues(
+        repository,
+        state="open",
+        sort="created",
+        limit=limit,
     )
-    response.raise_for_status()
 
-    payload = response.json()
-    if not isinstance(payload, list):
-        raise ValueError("GitHub returned an unexpected issues response.")
 
-    issues: list[GitHubIssue] = []
-    for item in payload:
-        if not isinstance(item, dict):
-            raise ValueError("GitHub returned an unexpected issue.")
-        if "pull_request" in item:
-            continue
+def fetch_closed_issues(
+    repository: str,
+    limit: int = MAX_HISTORICAL_ISSUES,
+) -> list[GitHubIssue]:
+    if (
+        isinstance(limit, bool)
+        or not isinstance(limit, int)
+        or not 1 <= limit <= MAX_HISTORICAL_ISSUES
+    ):
+        raise ValueError(
+            f"Historical issue limit must be between 1 and {MAX_HISTORICAL_ISSUES}."
+        )
 
-        issues.append(_parse_issue(item))
-        if len(issues) == limit:
-            break
-
-    return issues
+    return _fetch_repository_issues(
+        repository,
+        state="closed",
+        sort="updated",
+        limit=limit,
+    )
 
 
 def fetch_issue_by_number(repository: str, issue_number: int) -> GitHubIssue:
@@ -134,7 +193,7 @@ def fetch_issue_by_number(repository: str, issue_number: int) -> GitHubIssue:
     slug = _repository_slug(repository)
     response = requests.get(
         f"{API_URL}/repos/{slug}/issues/{issue_number}",
-        headers=_API_HEADERS,
+        headers=_request_headers(),
         timeout=REQUEST_TIMEOUT,
     )
     response.raise_for_status()

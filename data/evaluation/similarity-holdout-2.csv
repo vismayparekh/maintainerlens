@@ -1,0 +1,41 @@
+repository,number,title,url,duplicate_group
+numpy/numpy,18363,nanosecond precsion datetime converts to int in stead of datetime,https://github.com/numpy/numpy/issues/18363,numpy-18363-7619
+numpy/numpy,7619,BUG: .item() on a 0-dimensional datetime64[ns] array yields an integer,https://github.com/numpy/numpy/issues/7619,numpy-18363-7619
+numpy/numpy,3207,numpy.fromfile cannot read from zipfile ,https://github.com/numpy/numpy/issues/3207,numpy-3207-17118
+numpy/numpy,17118,zipfile with inner binary file could not be read numpy.fromfile,https://github.com/numpy/numpy/issues/17118,numpy-3207-17118
+numpy/numpy,29772,Float32 issues in mean of large array with non-singleton inner dimension,https://github.com/numpy/numpy/issues/29772,numpy-29772-8786
+numpy/numpy,8786,"numpy.sum not stable enough sometimes (Kahan, math.fsum)",https://github.com/numpy/numpy/issues/8786,numpy-29772-8786
+numpy/numpy,19061,Inconsistent `np.bincount` casting behavior for arrays vs array-likes,https://github.com/numpy/numpy/issues/19061,numpy-19061-3138
+numpy/numpy,3138,Unsafe type conversion in numpy.bincount when passing list instead of array,https://github.com/numpy/numpy/issues/3138,numpy-19061-3138
+pandas-dev/pandas,65765,BUG: pivot_table with multiple values and margins=True return result of margins not correct,https://github.com/pandas-dev/pandas/issues/65765,pandas-65765-53521
+pandas-dev/pandas,53521,DEPR: Some dropna behaviors in DataFrame.pivot_table,https://github.com/pandas-dev/pandas/issues/53521,pandas-65765-53521
+pandas-dev/pandas,11465,X axis weirdness with DataFrame.plot(kind='bar'),https://github.com/pandas-dev/pandas/issues/11465,pandas-11465-7612
+pandas-dev/pandas,7612,plotting with index of objects should use `FixedLocator`,https://github.com/pandas-dev/pandas/issues/7612,pandas-11465-7612
+pandas-dev/pandas,13871,API: Period and PeriodIndex do not support some offset aliases,https://github.com/pandas-dev/pandas/issues/13871,pandas-13871-4878
+pandas-dev/pandas,4878,Issues Creating Period with DateOffset as freq,https://github.com/pandas-dev/pandas/issues/4878,pandas-13871-4878
+pandas-dev/pandas,70005,BUG: DataFrame[tuple] returns a DataFrame instead of a Series for a unique full-depth key on a MultiIndex with duplicates,https://github.com/pandas-dev/pandas/issues/70005,pandas-70005-42102
+pandas-dev/pandas,42102,Indexing MultiIndex with duplicates return Series instead of raw value ,https://github.com/pandas-dev/pandas/issues/42102,pandas-70005-42102
+scipy/scipy,21736,BUG: input's `device` isn't inherited for newly created `xp.asarrays`,https://github.com/scipy/scipy/issues/21736,scipy-21736-22680
+scipy/scipy,22680,BUG: error for arrays on non-default device ,https://github.com/scipy/scipy/issues/22680,scipy-21736-22680
+scipy/scipy,23169,BUG: special.betainc: evaluates incorrectly to nan when `b=0`,https://github.com/scipy/scipy/issues/23169,scipy-23169-8411
+scipy/scipy,8411,"nan with betainc for a=0, b=3 and x=0.5",https://github.com/scipy/scipy/issues/8411,scipy-23169-8411
+scipy/scipy,22121,BUG: linalg.qr: large rounding error resulting in Hessenberg invariant violation,https://github.com/scipy/scipy/issues/22121,scipy-22121-22117
+scipy/scipy,22117,BUG: linalg.qr: large rounding error resulting in Hessenberg invariant violation,https://github.com/scipy/scipy/issues/22117,scipy-22121-22117
+matplotlib/matplotlib,31215,[Bug]: 3D Lines can't be drawn over patches with `computed_zorder`,https://github.com/matplotlib/matplotlib/issues/31215,matplotlib-31215-25033
+matplotlib/matplotlib,25033,[Bug]: Axes3D.computed_zorder does not appear to work (Line3D),https://github.com/matplotlib/matplotlib/issues/25033,matplotlib-31215-25033
+matplotlib/matplotlib,29994,Missing type hints for `matplotlib.dates.DateFormatter`,https://github.com/matplotlib/matplotlib/issues/29994,matplotlib-29994-26942
+matplotlib/matplotlib,26942,[Bug]: Missing typing for dates.py,https://github.com/matplotlib/matplotlib/issues/26942,matplotlib-29994-26942
+matplotlib/matplotlib,28979,[Bug]: Plots do not appear when debugging in `matplotlib >= 3.9`.,https://github.com/matplotlib/matplotlib/issues/28979,matplotlib-28979-28581
+matplotlib/matplotlib,28581,"[Bug]: Plotting code executes without displaying plots in the Console but works fine in the ""Run"" window",https://github.com/matplotlib/matplotlib/issues/28581,matplotlib-28979-28581
+scikit-learn/scikit-learn,25859,How to early stop in GradientBoostingClassifer?,https://github.com/scikit-learn/scikit-learn/issues/25859,scikit-learn-25859-18748
+scikit-learn/scikit-learn,18748,Support early_stopping with custom validation_set,https://github.com/scikit-learn/scikit-learn/issues/18748,scikit-learn-25859-18748
+scikit-learn/scikit-learn,14607,Add target for plot_roc_curve,https://github.com/scikit-learn/scikit-learn/issues/14607,scikit-learn-14607-17170
+scikit-learn/scikit-learn,17170,Extend plot_precision_recall_curve and plot_roc_curve to multiclass,https://github.com/scikit-learn/scikit-learn/issues/17170,scikit-learn-14607-17170
+scikit-learn/scikit-learn,19920,KBinsDiscretizer doesn't handle NAs,https://github.com/scikit-learn/scikit-learn/issues/19920,scikit-learn-19920-9341
+scikit-learn/scikit-learn,9341,KBinsDiscretizer: allow nans,https://github.com/scikit-learn/scikit-learn/issues/9341,scikit-learn-19920-9341
+psf/requests,6344,Cookies returned in Set-Cookie header not added to RequestsCookieJar ,https://github.com/psf/requests/issues/6344,requests-6344-6245
+psf/requests,6245,Cookie having a Domain cookie-attribute with empty string fails to be added to the cookie jar ,https://github.com/psf/requests/issues/6245,requests-6344-6245
+psf/requests,6183,adapt `requests`' version range check to release 5.0.0 of `chardet`,https://github.com/psf/requests/issues/6183,requests-6183-6177
+psf/requests,6177,support chardet v5.0.0,https://github.com/psf/requests/issues/6177,requests-6183-6177
+psf/requests,5275,How to use Session,https://github.com/psf/requests/issues/5275,requests-5275-5274
+psf/requests,5274,Two Host header are being sent when doing chunk transfer with Session,https://github.com/psf/requests/issues/5274,requests-5275-5274

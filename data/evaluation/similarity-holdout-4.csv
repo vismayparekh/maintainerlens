@@ -1,0 +1,41 @@
+repository,number,title,url,duplicate_group
+pytest-dev/pytest,15146,-c/--config-file: Validate missing configuration paths consistently,https://github.com/pytest-dev/pytest/issues/15146,pytest-config-path-errors
+pytest-dev/pytest,14716,"`-c`/`--config-file` has two failure modes for invalid paths: silent no-op for unrecognized extensions, and raw `FileNotFoundError` for recognized ones",https://github.com/pytest-dev/pytest/issues/14716,pytest-config-path-errors
+pytest-dev/pytest,15141,Skipped raised by a conftest of a command-line path crashes pytest instead of skipping,https://github.com/pytest-dev/pytest/issues/15141,pytest-skipped-conftest
+pytest-dev/pytest,15142,"conftest.py: support importorskip at import, make every other outcome exception a usage error",https://github.com/pytest-dev/pytest/issues/15142,pytest-skipped-conftest
+pytest-dev/pytest,14995,"`--log-cli` discards a `sys.stdout` swap made after capture started (`redirect_stdout`, `CliRunner.isolation`)",https://github.com/pytest-dev/pytest/issues/14995,pytest-log-cli-stdout
+pytest-dev/pytest,10553,--log-cli-level unexpectedly manipulates sys.stdout,https://github.com/pytest-dev/pytest/issues/10553,pytest-log-cli-stdout
+pytest-dev/pytest,14852,Report session fixture durations separately from tests,https://github.com/pytest-dev/pytest/issues/14852,pytest-fixture-durations
+pytest-dev/pytest,8741,Setup times of long-running fixtures are attributed to first test,https://github.com/pytest-dev/pytest/issues/8741,pytest-fixture-durations
+pydantic/pydantic,14328,Strict Literal validation accepts values of different types that compare equal,https://github.com/pydantic/pydantic/issues/14328,pydantic-strict-literal
+pydantic/pydantic,14066,Strict validation of integer Literal accepts floating-point values,https://github.com/pydantic/pydantic/issues/14066,pydantic-strict-literal
+pydantic/pydantic,14232,Reuse schemas for models with `defer_build=True`,https://github.com/pydantic/pydantic/issues/14232,pydantic-defer-build-schemas
+pydantic/pydantic,13681,Independently rebuild nested models when used within other core schema generation contexts,https://github.com/pydantic/pydantic/issues/13681,pydantic-defer-build-schemas
+pydantic/pydantic,14211,[BUG] `ByteSize` silently ignores invalid trailing characters and suffixes instead of failing validation,https://github.com/pydantic/pydantic/issues/14211,pydantic-bytesize-trailing-data
+pydantic/pydantic,13519,Error on trailing data for `ByteSize`,https://github.com/pydantic/pydantic/issues/13519,pydantic-bytesize-trailing-data
+pydantic/pydantic,14020,Generic TypedDict subclass with PEP 695 syntax silently skips validation on inherited fields`v,https://github.com/pydantic/pydantic/issues/14020,pydantic-generic-typeddict
+pydantic/pydantic,7988,Generic TypedDicts do not resolve type parameters correctly,https://github.com/pydantic/pydantic/issues/7988,pydantic-generic-typeddict
+pandas-dev/pandas,66489,BUG: ujson_dumps can segfault when Python API return values are not checked during encoding,https://github.com/pandas-dev/pandas/issues/66489,pandas-ujson-segfault
+pandas-dev/pandas,66356,BUG: Segfaults from various python api call return values not being checked during encode by ujson,https://github.com/pandas-dev/pandas/issues/66356,pandas-ujson-segfault
+pandas-dev/pandas,66285,BUILD: Fix and remove 32-bit compiler warning suppressions,https://github.com/pandas-dev/pandas/issues/66285,pandas-32bit-build
+pandas-dev/pandas,46360,BUG: 32 bit build does not work with -Werror,https://github.com/pandas-dev/pandas/issues/46360,pandas-32bit-build
+pandas-dev/pandas,65804,BUG: pd.array does not preserve missing values when converting NumPy masked arrays,https://github.com/pandas-dev/pandas/issues/65804,pandas-masked-array-missing
+pandas-dev/pandas,63879,BUG: Conversion from numpy masked arrays to pandas array does not preserve missing values,https://github.com/pandas-dev/pandas/issues/63879,pandas-masked-array-missing
+pandas-dev/pandas,61663,BUG: Incorrect guess_datetime_format response,https://github.com/pandas-dev/pandas/issues/61663,pandas-datetime-format-inference
+pandas-dev/pandas,57452,BUG: to_datetime fails to infer timeformat depending on hour of day,https://github.com/pandas-dev/pandas/issues/57452,pandas-datetime-format-inference
+numpy/numpy,33405,BUG: `np.array` hangs for a list containing two references to itself,https://github.com/numpy/numpy/issues/33405,numpy-recursive-array-list
+numpy/numpy,9311,determining the datatype of recursive list is slow,https://github.com/numpy/numpy/issues/9311,numpy-recursive-array-list
+numpy/numpy,33398,BUG: `irfft` returns a backing-buffer value for an empty input view with `n=1`,https://github.com/numpy/numpy/issues/33398,numpy-empty-real-fft
+numpy/numpy,33396,BUG: `hfft` returns a nonzero result for empty input with `n=1`,https://github.com/numpy/numpy/issues/33396,numpy-empty-real-fft
+numpy/numpy,33387,"BUG: datetime64 year-unit and direct-string to nanosecond conversion silently overflow, while other unit conversions raise OverflowError",https://github.com/numpy/numpy/issues/33387,numpy-datetime-overflow
+numpy/numpy,31926,BUG: Signed integer overflow in datetime.c - comprehensive fix needed for all arithmetic operations,https://github.com/numpy/numpy/issues/31926,numpy-datetime-overflow
+numpy/numpy,32111,BUG: numpy.einsum_path returns sub-optimal path (by orders of magnitude) even with optimize='optimal',https://github.com/numpy/numpy/issues/32111,numpy-einsum-path
+numpy/numpy,11825,"einsum fails to optimize, leads to very expensive evaluation",https://github.com/numpy/numpy/issues/11825,numpy-einsum-path
+scipy/scipy,26705,BUG: stats.wilcoxon(method='auto') lets unrelated ties or zeros change another slice's p-value,https://github.com/scipy/scipy/issues/26705,scipy-wilcoxon-method-auto
+scipy/scipy,26115,"QUERY: hypothesis tests resolve `method='auto'` once, not once per slice",https://github.com/scipy/scipy/issues/26115,scipy-wilcoxon-method-auto
+scipy/scipy,25824,BUG: scipy.special.i1 prematurely overflows to inf at x=713 although the result is representable in float64,https://github.com/scipy/scipy/issues/25824,scipy-special-i1-overflow
+scipy/scipy,25823,BUG: scipy.special.i0 prematurely overflows to inf at x=713 despite a finite float64 result,https://github.com/scipy/scipy/issues/25823,scipy-special-i1-overflow
+scipy/scipy,25640,BUG: Deepcopy of interpolators not possible in SciPy 1.18.0,https://github.com/scipy/scipy/issues/25640,scipy-interpolator-deepcopy
+scipy/scipy,25489,BUG: `copy.deepcopy` and `pickle` fail for interpolation objects in 1.18.0,https://github.com/scipy/scipy/issues/25489,scipy-interpolator-deepcopy
+scipy/scipy,23977,BUG: optimize.shgo: ignores minimizer_kwargs options dictionary,https://github.com/scipy/scipy/issues/23977,scipy-shgo-minimizer-options
+scipy/scipy,20028,BUG: optimize.shgo: issue passing options to local minimizer,https://github.com/scipy/scipy/issues/20028,scipy-shgo-minimizer-options

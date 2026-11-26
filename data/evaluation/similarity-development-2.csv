@@ -1,0 +1,41 @@
+repository,number,title,url,duplicate_group
+pytest-dev/pytest,6826,junitxml not picking up user_properties in case of failure in call and error in teardown,https://github.com/pytest-dev/pytest/issues/6826,pytest-junitxml-properties
+pytest-dev/pytest,11367,[junit] failed test is missing properties if there is error also in teardown,https://github.com/pytest-dev/pytest/issues/11367,pytest-junitxml-properties
+pytest-dev/pytest,5927,Skipping inside a fixture causes memory leak,https://github.com/pytest-dev/pytest/issues/5927,pytest-parametrize-ids
+pytest-dev/pytest,5642,Pytest holds on to fixtures too long causing a memory leak,https://github.com/pytest-dev/pytest/issues/5642,pytest-parametrize-ids
+pytest-dev/pytest,13507,8.4.0 regression - `classmethod` decorator above `fixture` decorator prevents the fixture from being discovered,https://github.com/pytest-dev/pytest/issues/13507,pytest-warning-config
+pytest-dev/pytest,13479,Pytest 8.4 fails to discover a test fixture withtin a test class when combined with the usage of freezegun,https://github.com/pytest-dev/pytest/issues/13479,pytest-warning-config
+pytest-dev/pytest,12756,Bug: `filterwarnings` doesn't work for `pytest` plugins,https://github.com/pytest-dev/pytest/issues/12756,pytest-async-fixture
+pytest-dev/pytest,12697,"Surprisingly, pytest doesn't collect warnings when importing the package for plugins",https://github.com/pytest-dev/pytest/issues/12697,pytest-async-fixture
+pydantic/pydantic,5031,Partial validation for models,https://github.com/pydantic/pydantic/issues/5031,pydantic-partial-validation
+pydantic/pydantic,1673,'Partial' Equivalent,https://github.com/pydantic/pydantic/issues/1673,pydantic-partial-validation
+pydantic/pydantic,3767,BaseSettings - pylance complains about missing parameters,https://github.com/pydantic/pydantic/issues/3767,pydantic-validation-alias
+pydantic/pydantic,3753,BaseSettings - pylance complains for not setting default values to fields,https://github.com/pydantic/pydantic/issues/3753,pydantic-validation-alias
+pytorch/pytorch,201985,torch.compile drops an explicitly-passed -0.0 argument (eager keeps it) for ops with a float schema default,https://github.com/pytorch/pytorch/issues/201985,pytorch-dynamo-recompile
+pytorch/pytorch,201981,Python kernels silently drop explicitly-passed float args that are IEEE-equal to the schema default (-0.0 to +0.0),https://github.com/pytorch/pytorch/issues/201981,pytorch-dynamo-recompile
+pytorch/pytorch,200756,torch.empty data silently zeroed by kernel reclaim on aarch64,https://github.com/pytorch/pytorch/issues/200756,pytorch-cuda-graph
+pytorch/pytorch,200905,Silent data corruption (zeroed by kernel reclaim) on aarch64,https://github.com/pytorch/pytorch/issues/200905,pytorch-cuda-graph
+pytorch/pytorch,189893,[CI][ROCm] convnextv2_nano.fcmae_ft_in22k_in1k flaky accuracy (pass/fail_accuracy) on gfx950 dynamic_inductor_timm training,https://github.com/pytorch/pytorch/issues/189893,pytorch-distributed-checkpoint
+pytorch/pytorch,169378,[rocm triton 3.6] rocm-periodic-dynamo-benchmarks-test : convnextv2_nano.fcmae_ft_in22k_in1k fail_accuracy,https://github.com/pytorch/pytorch/issues/169378,pytorch-distributed-checkpoint
+pytorch/pytorch,203800,[CPU] _standard_gamma and _sample_dirichlet silently accept invalid concentration values,https://github.com/pytorch/pytorch/issues/203800,pytorch-concentration-validation
+pytorch/pytorch,195547,☂️ Missing shape checks result in out-of-bounds access of Tensor data,https://github.com/pytorch/pytorch/issues/195547,pytorch-concentration-validation
+pandas-dev/pandas,58329,BUG: `np.where` called with `ps.Series` returns `np.array` instead of `pd.Series`,https://github.com/pandas-dev/pandas/issues/58329,pandas-corr-columns
+pandas-dev/pandas,26380,ENH: Implementing NEP 18's __array_function__,https://github.com/pandas-dev/pandas/issues/26380,pandas-corr-columns
+pandas-dev/pandas,52776,QST: is there a more straightforward approach to calulate correlation between two sets of columns ? ,https://github.com/pandas-dev/pandas/issues/52776,pandas-qst-correlation
+pandas-dev/pandas,9823,"Corrwith when ""other"" has different columns",https://github.com/pandas-dev/pandas/issues/9823,pandas-qst-correlation
+pandas-dev/pandas,36819,ENH: Infer Enums as categorical,https://github.com/pandas-dev/pandas/issues/36819,pandas-period-frequency
+pandas-dev/pandas,62207,ENH: Infer enums as categories,https://github.com/pandas-dev/pandas/issues/62207,pandas-period-frequency
+pandas-dev/pandas,67055,BUG: Pandas 3: RangeIndex values can be modified from the outside,https://github.com/pandas-dev/pandas/issues/67055,pandas-nan-datetime
+pandas-dev/pandas,49663,BUG: Different behavior for different index types ,https://github.com/pandas-dev/pandas/issues/49663,pandas-nan-datetime
+numpy/numpy,25782,BUG: a.dtype in set(dtypes) doesn't work,https://github.com/numpy/numpy/issues/25782,numpy-masked-array-scalar
+numpy/numpy,17864,BUG: ``np.dtype`` object does not produce consistent hashes.,https://github.com/numpy/numpy/issues/17864,numpy-masked-array-scalar
+numpy/numpy,24661,"BUG: np.float64(np.array([1.])) equals 1.0 but not array([1.], dtype=float64)",https://github.com/numpy/numpy/issues/24661,numpy-float-scalar-comparison
+numpy/numpy,1362,"Inconsistent behavior of float32, float64 (Trac #764)",https://github.com/numpy/numpy/issues/1362,numpy-float-scalar-comparison
+numpy/numpy,22091,BUG: np.abs(np.int64(-9223372036854775808))  is negative,https://github.com/numpy/numpy/issues/22091,numpy-ufunc-casting
+numpy/numpy,5657,Silent overflow in absolute(),https://github.com/numpy/numpy/issues/5657,numpy-ufunc-casting
+numpy/numpy,21893,BUG: f2py generated signature file and automatic arrays ,https://github.com/numpy/numpy/issues/21893,numpy-typing-overload
+numpy/numpy,21892,BUG: f2py generated signature file and automatic arrays ,https://github.com/numpy/numpy/issues/21892,numpy-typing-overload
+scipy/scipy,15731,"DEPR: execute deprecation for non-integer arguments in bdt{r,rc,ri}()",https://github.com/scipy/scipy/issues/15731,scipy-optimization-bounds
+scipy/scipy,15596,ENH: special: extend `nbdtr` and friends for float `n` instead of truncation,https://github.com/scipy/scipy/issues/15596,scipy-optimization-bounds
+scipy/scipy,12289,Non-descriptive RuntimeError,https://github.com/scipy/scipy/issues/12289,scipy-sparse-operation
+scipy/scipy,10300,scipy.stats.rv_continuous.fit throws empty RuntimeError when input has NaNs,https://github.com/scipy/scipy/issues/10300,scipy-sparse-operation
