@@ -1,0 +1,2 @@
+fastembed==0.9.1
+faiss-cpu==1.16.0

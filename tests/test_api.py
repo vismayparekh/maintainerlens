@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -59,6 +60,56 @@ class ApiTests(unittest.TestCase):
             closed_issue.number,
         )
         self.assertTrue(payload["issues"][0]["similar_issues"][0]["is_closed"])
+        self.assertEqual(payload["issues"][0]["similar_issues"][0]["method"], "text")
+
+    @patch.dict(os.environ, {"MAINTAINERLENS_SEMANTIC_SEARCH": "1"})
+    @patch("app.api.find_semantic_fallbacks")
+    @patch("app.api.find_similar_issues")
+    @patch("app.api.fetch_closed_issues")
+    @patch("app.api.fetch_issues")
+    def test_defers_semantic_search_to_same_batch_without_overwriting_text_matches(
+        self,
+        fetch_issues: Mock,
+        fetch_closed_issues: Mock,
+        find_text: Mock,
+        find_semantic: Mock,
+    ) -> None:
+        first, second, closed_issue = [
+            GitHubIssue(
+                number, f"Issue {number}", "Example details", (),
+                f"https://github.com/acme/project/issues/{number}",
+            )
+            for number in (11, 12, 8)
+        ]
+        fetch_issues.return_value = [first, second]
+        fetch_closed_issues.return_value = [closed_issue]
+        find_text.return_value = {11: [], 12: [SimilarityMatch(closed_issue, 0.4)], 8: []}
+        find_semantic.return_value = {11: [SimilarityMatch(closed_issue, 0.92)]}
+
+        initial = self.client.get("/api/issues", params={"repository": "acme/project"})
+
+        self.assertEqual(initial.status_code, 200)
+        self.assertEqual(initial.json()["issues"][0]["similar_issues"], [])
+        self.assertEqual(initial.json()["issues"][1]["similar_issues"][0]["method"], "text")
+        find_semantic.assert_not_called()
+
+        related = self.client.get(f"/api/issues/related/{initial.json()['related_lookup_id']}")
+
+        self.assertEqual(related.status_code, 200)
+        self.assertEqual(set(related.json()), {"11"})
+        match = related.json()["11"][0]
+        self.assertEqual(match["method"], "semantic")
+        self.assertEqual(match["number"], 8)
+        self.assertTrue(match["is_closed"])
+        self.assertEqual(find_semantic.call_args.args, ((first, second, closed_issue),))
+        self.assertEqual(find_semantic.call_args.kwargs["issue_numbers"], {11})
+        fetch_issues.assert_called_once()
+        fetch_closed_issues.assert_called_once()
+
+    def test_missing_lookup_requires_refetch(self) -> None:
+        related = self.client.get("/api/issues/related/unknown-batch")
+
+        self.assertEqual(related.status_code, 404)
 
     @patch("app.api.analyze_issue")
     def test_analyzes_issue_without_exposing_provider_details(

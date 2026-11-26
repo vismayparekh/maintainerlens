@@ -48,6 +48,25 @@ closed-issue history. Up to three ranked suggestions link to candidate issues.
 Similarity scores are signals, not probabilities, and suggestions are not
 confirmed duplicates. Review them before taking action.
 
+### Background semantic matches
+
+To enable hybrid related-issue search in the Vue dashboard, install the optional
+dependencies and start the local API with semantic search enabled:
+
+```bash
+python -m pip install -r requirements-semantic.txt
+MAINTAINERLENS_SEMANTIC_SEARCH=1 python -m uvicorn app.api:app \
+  --host 127.0.0.1 --port 8000
+```
+
+Use `npm run dev` from `frontend/` as usual. The inbox and text matches load
+first. If an open issue has no text matches, its Related issues panel shows
+search progress and updates when the semantic results arrive. Existing text
+matches stay visible. The first semantic lookup can take longer while the
+model downloads or embeds the candidate issues. Later lookups reuse embeddings
+for unchanged issue text within the same API process. Run a single API worker
+for this local workflow so both requests can access the same candidate batch.
+
 ### AI summaries and category suggestions
 
 Select an issue and click **Generate AI suggestion** to request a concise
@@ -194,7 +213,79 @@ Git to keep complete issue bodies out of the repository.
 | Weighted text overlap, 40 issues | 93% top-3 precision, 67% top-3 recall, 78% pair F1 |
 
 These curated development results provide a comparison point for future
-models. No holdout results are reported here.
+models.
+
+### Compare semantic duplicate retrieval
+
+Install the optional dependencies and reuse the development snapshot:
+
+```bash
+python -m pip install -r requirements-semantic.txt
+python -m app.evaluate score-similarity data/evaluation/similarity-development.csv \
+  --snapshot data/evaluation/snapshots/similarity-development.json \
+  --compare-semantic
+```
+
+[BGE-small](https://huggingface.co/BAAI/bge-small-en-v1.5) embeds each issue's
+title and description locally. [FAISS](https://github.com/facebookresearch/faiss/wiki/MetricType-and-distances)
+ranks candidates within the same repository by cosine similarity. Both methods
+return up to three suggestions per issue. The semantic score floor defaults to
+0.8 and can be changed with `--semantic-threshold` for development comparisons.
+
+The first semantic run downloads the model into `.cache/fastembed/`. With the
+model and snapshot available locally, set `HF_HUB_OFFLINE=1` to run offline.
+Retrieval time is the median of three passes over all candidate pools. It includes
+text processing or embedding, ranking, and filtering. Model loading and issue
+fetching happen before timing begins.
+
+| Method on the 40-issue development snapshot | Top-3 precision | Top-3 recall | Median retrieval time |
+| --- | ---: | ---: | ---: |
+| Weighted text overlap | 93% | 67% | 10.62 ms |
+| BGE-small and FAISS, cosine floor 0.8 | 72% | 100% | 14.52 s |
+
+The embedding method surfaced all 21 labeled duplicate pairs on this curated
+sample and returned more false positives.
+
+### Compare hybrid duplicate retrieval
+
+With the same optional dependencies and snapshot, run:
+
+```bash
+HF_HUB_OFFLINE=1 python -m app.evaluate score-similarity \
+  data/evaluation/similarity-development.csv \
+  --snapshot data/evaluation/snapshots/similarity-development.json \
+  --compare-hybrid
+```
+
+Run the semantic comparison once to cache the model before using offline mode.
+The hybrid method keeps text-overlap results when available and uses FAISS for
+queries with an empty result. Its default cosine cutoff is 0.85, selected on
+the development set. A bounded in-memory cache reuses vectors by issue text,
+so unchanged issues skip embedding on repeat runs and edits get fresh vectors.
+
+Cold retrieval starts with an empty embedding cache and a loaded model. Warm
+retrieval is the median of three repeat passes using the same cache.
+
+| Method on the 40-issue development snapshot | Top-3 precision | Top-3 recall | Pair F1 | Retrieval time |
+| --- | ---: | ---: | ---: | --- |
+| Weighted text overlap | 93% | 67% | 78% | 11.15 ms median |
+| Hybrid, cosine cutoff 0.85 | 90% | 90% | 93% | 11.18 s cold, 11.91 ms warm median |
+
+The hybrid recovered 20 of 21 labeled duplicate pairs, compared with 14 for
+text overlap on the development set.
+
+### Similarity holdout result
+
+The 40-issue `similarity-holdout-4.csv` split was scored once at the 0.85 cutoff
+selected on development data. Both methods used the same candidate pools.
+
+| Method | Labeled pairs recovered | Top-3 precision | Top-3 recall | Pair F1 | Retrieval time |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Weighted text overlap | 10 / 20 | 83% | 50% | 62% | 17.26 ms median |
+| Hybrid, cosine cutoff 0.85 | 17 / 20 | 89% | 85% | 87% | 11.94 s cold, 18.37 ms warm median |
+
+Timings are from one local machine and exclude GitHub fetching and model
+loading. The other holdout splits were left unscored in this run.
 
 ## Run tests
 

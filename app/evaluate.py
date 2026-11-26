@@ -2,10 +2,12 @@ import argparse
 import csv
 import json
 from collections import defaultdict
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Hashable, Sequence
 from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path
+from statistics import median
+from time import perf_counter
 from typing import TypeVar
 
 import requests
@@ -19,8 +21,18 @@ from app.github_client import (
 from app.processor import (
     ISSUE_CATEGORIES,
     MAX_SIMILAR_ISSUES,
+    SimilarityMatch,
     classify_issue,
     find_similar_issues,
+)
+from app.semantic_retrieval import (
+    DEFAULT_HYBRID_THRESHOLD,
+    DEFAULT_SEMANTIC_THRESHOLD,
+    EMBEDDING_MODEL,
+    EmbeddingCache,
+    find_hybrid_issues,
+    find_semantic_issues,
+    load_embedding_model,
 )
 
 CSV_COLUMNS = (
@@ -251,10 +263,13 @@ def _format_metric(value: float | None) -> str:
 
 def _predicted_duplicate_links(
     issues_by_repository: dict[str, list[GitHubIssue]],
+    retrieve: Callable[[Sequence[GitHubIssue]], dict[int, list[SimilarityMatch]]] = (
+        find_similar_issues
+    ),
 ) -> set[tuple[str, int, int]]:
     predicted_pairs: set[tuple[str, int, int]] = set()
     for repository, issues in issues_by_repository.items():
-        matches_by_number = find_similar_issues(issues)
+        matches_by_number = retrieve(issues)
         for issue in issues:
             for match in matches_by_number[issue.number]:
                 predicted_pairs.add((repository, issue.number, match.issue.number))
@@ -387,6 +402,8 @@ def evaluate_similarity_annotations(
     annotations: list[SimilarityAnnotation],
     *,
     fetch_issue: Callable[[str, int], GitHubIssue] | None = None,
+    semantic_threshold: float | None = None,
+    hybrid: bool = False,
 ) -> str:
     fetch_issue = fetch_issue or fetch_issue_by_number
     issues_by_repository: dict[str, list[GitHubIssue]] = defaultdict(list)
@@ -409,6 +426,43 @@ def evaluate_similarity_annotations(
             ].append(annotation.number)
 
     actual_links = _annotated_duplicate_links(duplicate_groups)
+    if semantic_threshold is not None:
+        threshold = semantic_threshold
+        load_embedding_model()
+        cache = EmbeddingCache() if hybrid else None
+
+        def retrieve_comparison(issues: Sequence[GitHubIssue]) -> dict[int, list[SimilarityMatch]]:
+            if cache is not None:
+                return find_hybrid_issues(issues, threshold=threshold, cache=cache)
+            return find_semantic_issues(issues, threshold=threshold)
+
+        lines = [f"Evaluated {len(annotations)} issue(s) for similarity"]
+        method = "Hybrid text overlap + FAISS fallback" if hybrid else "FAISS cosine similarity"
+        for name, retrieve, measure_cache in (
+            ("Weighted text overlap", find_similar_issues, False),
+            (
+                f"{method} ({EMBEDDING_MODEL}, threshold {threshold:g})",
+                retrieve_comparison,
+                hybrid,
+            ),
+        ):
+            timings = []
+            for _ in range(4 if measure_cache else 3):
+                start = perf_counter()
+                predicted_links = _predicted_duplicate_links(issues_by_repository, retrieve)
+                timings.append(perf_counter() - start)
+            lines.extend([
+                "", name,
+                *_similarity_metric_lines(actual_links, predicted_links),
+            ])
+            if measure_cache:
+                lines.append(f"Cold embedding-cache retrieval time: {timings.pop(0) * 1_000:.2f} ms")
+            timing_label = "Warm median" if measure_cache else "Median"
+            lines.append(
+                f"{timing_label} retrieval time across all pools: {median(timings) * 1_000:.2f} ms"
+            )
+        return "\n".join(lines)
+
     predicted_links = _predicted_duplicate_links(issues_by_repository)
     return "\n".join(
         [
@@ -453,6 +507,25 @@ def _build_parser() -> argparse.ArgumentParser:
         help="score a similarity-only annotation CSV",
     )
     similarity_parser.add_argument("csv_file", type=Path)
+    comparisons = similarity_parser.add_mutually_exclusive_group()
+    comparisons.add_argument(
+        "--compare-semantic",
+        action="store_true",
+        help="compare text overlap against sentence embeddings and FAISS",
+    )
+    comparisons.add_argument(
+        "--compare-hybrid",
+        action="store_true",
+        help="compare text overlap against text overlap with cached semantic fallback",
+    )
+    similarity_parser.add_argument(
+        "--semantic-threshold",
+        type=float,
+        help=(
+            f"minimum cosine score (semantic default: {DEFAULT_SEMANTIC_THRESHOLD:g}, "
+            f"hybrid default: {DEFAULT_HYBRID_THRESHOLD:g})"
+        ),
+    )
     for scorer in (score_parser, similarity_parser):
         scorer.add_argument(
             "--snapshot",
@@ -462,7 +535,14 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _score_file(csv_file: Path, snapshot: Path | None, *, similarity: bool) -> str:
+def _score_file(
+    csv_file: Path,
+    snapshot: Path | None,
+    *,
+    similarity: bool,
+    semantic_threshold: float | None = None,
+    hybrid: bool = False,
+) -> str:
     annotations = (
         read_similarity_annotations(csv_file) if similarity else read_annotations(csv_file)
     )
@@ -496,13 +576,21 @@ def _score_file(csv_file: Path, snapshot: Path | None, *, similarity: bool) -> s
         return GitHubIssue(number, record["title"], record["body"], (), record["url"])
 
     if similarity:
-        return evaluate_similarity_annotations(annotations, fetch_issue=fetch_issue)
+        return evaluate_similarity_annotations(
+            annotations,
+            fetch_issue=fetch_issue,
+            semantic_threshold=semantic_threshold,
+            hybrid=hybrid,
+        )
     return evaluate_annotations(annotations, fetch_issue=fetch_issue)
 
 
 def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
+    similarity = args.command == "score-similarity"
+    hybrid = similarity and args.compare_hybrid
+    comparison = similarity and (args.compare_semantic or hybrid)
 
     try:
         if args.command == "export":
@@ -510,9 +598,24 @@ def main() -> None:
             print(f"Wrote {count} issue(s) to {args.output}.")
             return
 
+        threshold = None
+        if similarity:
+            if args.semantic_threshold is not None and not comparison:
+                parser.error("--semantic-threshold requires a comparison mode.")
+            if comparison:
+                threshold = args.semantic_threshold
+                if threshold is None:
+                    threshold = DEFAULT_HYBRID_THRESHOLD if hybrid else DEFAULT_SEMANTIC_THRESHOLD
+                if not 0 <= threshold <= 1:
+                    parser.error("--semantic-threshold must be between 0 and 1.")
         print(_score_file(
-            args.csv_file, args.snapshot, similarity=args.command == "score-similarity"
+            args.csv_file, args.snapshot,
+            similarity=similarity, semantic_threshold=threshold, hybrid=hybrid,
         ))
+    except ImportError as exc:
+        if comparison:
+            parser.error(f"Install requirements-semantic.txt before comparing retrieval: {exc}")
+        raise
     except (OSError, csv.Error, ValueError, requests.RequestException) as exc:
         parser.error(str(exc))
 

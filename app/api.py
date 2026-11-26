@@ -1,5 +1,11 @@
+import logging
+import os
+from collections import OrderedDict
+from dataclasses import dataclass
+from threading import Lock
 from typing import Literal
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 import requests
 from fastapi import FastAPI, HTTPException, Query
@@ -19,10 +25,25 @@ from app.llm_client import (
 )
 from app.processor import SimilarityMatch, classify_issue, find_similar_issues
 from app.review_store import ReviewStoreError, export_reviews_csv, save_review
+from app.semantic_retrieval import EmbeddingCache, find_semantic_fallbacks
 
 IssueCategory = Literal["Bug", "Question", "Feature request", "Other"]
 
 app = FastAPI(title="MaintainerLens API", version="1.0.0")
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class RelatedIssueBatch:
+    candidates: tuple[GitHubIssue, ...]
+    open_numbers: set[int]
+    query_numbers: set[int]
+
+
+_MAX_RELATED_BATCHES = 16
+_related_batches: OrderedDict[str, RelatedIssueBatch] = OrderedDict()
+_related_batches_lock = Lock()
+_embedding_cache = EmbeddingCache()
 
 
 class SimilarIssueResponse(BaseModel):
@@ -32,6 +53,7 @@ class SimilarIssueResponse(BaseModel):
     category: IssueCategory
     is_closed: bool
     score: float
+    method: Literal["text", "semantic"] = "text"
 
 
 class IssueResponse(BaseModel):
@@ -48,6 +70,7 @@ class IssueListResponse(BaseModel):
     repository: str
     issues: list[IssueResponse]
     historical_issue_count: int
+    related_lookup_id: str | None = None
 
 
 class AnalyzeIssueRequest(BaseModel):
@@ -100,17 +123,24 @@ def _issue_response(
         labels=list(issue.labels),
         url=issue.url,
         category=classify_issue(issue),
-        similar_issues=[
-            SimilarIssueResponse(
-                number=match.issue.number,
-                title=match.issue.title,
-                url=match.issue.url,
-                category=classify_issue(match.issue),
-                is_closed=match.issue.number not in open_issue_numbers,
-                score=match.score,
-            )
-            for match in similar_issues
-        ],
+        similar_issues=[_similar_issue_response(match, open_issue_numbers) for match in similar_issues],
+    )
+
+
+def _similar_issue_response(
+    match: SimilarityMatch,
+    open_issue_numbers: set[int],
+    *,
+    method: Literal["text", "semantic"] = "text",
+) -> SimilarIssueResponse:
+    return SimilarIssueResponse(
+        number=match.issue.number,
+        title=match.issue.title,
+        url=match.issue.url,
+        category=classify_issue(match.issue),
+        is_closed=match.issue.number not in open_issue_numbers,
+        score=match.score,
+        method=method,
     )
 
 
@@ -150,6 +180,17 @@ def list_repository_issues(
             seen_numbers.add(issue.number)
 
     matches_by_number = find_similar_issues(candidates)
+    lookup_id = None
+    if os.getenv("MAINTAINERLENS_SEMANTIC_SEARCH") == "1" and len(candidates) > 1:
+        query_numbers = {issue.number for issue in open_issues if not matches_by_number[issue.number]}
+        if query_numbers:
+            lookup_id = uuid4().hex
+            with _related_batches_lock:
+                _related_batches[lookup_id] = RelatedIssueBatch(
+                    tuple(candidates), open_issue_numbers, query_numbers
+                )
+                if len(_related_batches) > _MAX_RELATED_BATCHES:
+                    _related_batches.popitem(last=False)
     return IssueListResponse(
         repository=repository,
         issues=[
@@ -161,7 +202,31 @@ def list_repository_issues(
             for issue in open_issues
         ],
         historical_issue_count=len(candidates) - len(open_issues),
+        related_lookup_id=lookup_id,
     )
+
+
+@app.get("/api/issues/related/{lookup_id}", response_model=dict[int, list[SimilarIssueResponse]])
+def find_background_related_issues(lookup_id: str) -> dict[int, list[SimilarIssueResponse]]:
+    with _related_batches_lock:
+        batch = _related_batches.get(lookup_id)
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Fetch issues again to refresh related matches.")
+
+    try:
+        matches = find_semantic_fallbacks(
+            batch.candidates, issue_numbers=batch.query_numbers, cache=_embedding_cache
+        )
+    except Exception:
+        logger.exception("Background semantic retrieval failed")
+        raise HTTPException(status_code=503, detail="Semantic search is unavailable.") from None
+
+    return {
+        number: [
+            _similar_issue_response(match, batch.open_numbers, method="semantic") for match in results
+        ]
+        for number, results in matches.items()
+    }
 
 
 @app.post("/api/issues/analyze", response_model=AnalyzeIssueResponse)

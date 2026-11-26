@@ -12,6 +12,7 @@ const selectedNumber = ref(null)
 const categoryFilter = ref('All')
 const searchQuery = ref('')
 const loadingIssues = ref(false)
+const relatedStatus = ref('idle')
 const loadingAnalysis = ref(false)
 const savingReview = ref(false)
 const downloadingReviews = ref(false)
@@ -23,6 +24,7 @@ const reviewedSummary = ref('')
 const reviewedCategory = ref('')
 const reviewMessage = ref('')
 let analysisRequest = null
+let relatedRequest = null
 
 const selectedIssue = computed(
   () => issues.value.find((issue) => issue.number === selectedNumber.value) ?? null,
@@ -89,7 +91,32 @@ async function responseMessage(response) {
   }
 }
 
+async function fetchRelatedIssues(lookupId) {
+  const request = new AbortController()
+  relatedRequest = request
+  relatedStatus.value = 'loading'
+  try {
+    const response = await fetch(`/api/issues/related/${encodeURIComponent(lookupId)}`, {
+      signal: request.signal,
+    })
+    if (!response.ok) throw new Error('Related issue search failed.')
+    const matches = await response.json()
+    if (relatedRequest !== request) return
+    for (const issue of issues.value) {
+      if (!issue.similar_issues.length && matches[issue.number]) {
+        issue.similar_issues = matches[issue.number]
+      }
+    }
+    relatedStatus.value = 'complete'
+  } catch {
+    if (relatedRequest === request) relatedStatus.value = 'unavailable'
+  } finally {
+    if (relatedRequest === request) relatedRequest = null
+  }
+}
+
 async function fetchIssues() {
+  if (loadingIssues.value) return
   if (!repository.value.trim()) {
     pageError.value = 'Enter a GitHub repository such as psf/requests.'
     return
@@ -97,6 +124,9 @@ async function fetchIssues() {
   loadingIssues.value = true
   pageError.value = ''
   statusMessage.value = ''
+  relatedRequest?.abort()
+  relatedRequest = null
+  relatedStatus.value = 'idle'
   issues.value = []
   selectedNumber.value = null
   clearReview()
@@ -113,6 +143,7 @@ async function fetchIssues() {
     statusMessage.value = result.issues.length
       ? `Loaded ${result.issues.length} open issues and compared against ${result.historical_issue_count} recently closed issues.`
       : 'No open issues were found for this repository.'
+    if (result.related_lookup_id) void fetchRelatedIssues(result.related_lookup_id)
   } catch (error) {
     pageError.value = error instanceof Error ? error.message : 'Could not load issues.'
   } finally {
@@ -405,7 +436,7 @@ async function downloadReviews() {
                   <p class="eyebrow">CONTEXT</p>
                   <h3>Related issues</h3>
                 </div>
-                <span class="muted-caption">Text similarity · not confirmed duplicates</span>
+                <span class="muted-caption">Review possible matches</span>
               </div>
               <div v-if="selectedIssue.similar_issues.length" class="similar-list">
                 <a
@@ -419,11 +450,20 @@ async function downloadReviews() {
                   <span class="similar-icon">↗</span>
                   <span class="similar-copy">
                     <strong>#{{ match.number }} {{ match.title }}</strong>
-                    <span>{{ match.is_closed ? 'Closed history' : 'Open issue' }} · {{ match.category }}</span>
+                    <span>
+                      {{ match.is_closed ? 'Closed history' : 'Open issue' }} · {{ match.category }}
+                      · {{ match.method === 'semantic' ? 'Semantic similarity' : 'Text similarity' }}
+                    </span>
                   </span>
                   <span class="similar-score">{{ Math.round(match.score * 100) }}%</span>
                 </a>
               </div>
+              <p v-else-if="relatedStatus === 'loading'" class="empty-similar" role="status">
+                Searching for related issues…
+              </p>
+              <p v-else-if="relatedStatus === 'unavailable'" class="empty-similar" role="status">
+                Semantic search is unavailable. Fetch issues again to retry.
+              </p>
               <p v-else class="empty-similar">No related issues passed the similarity filters.</p>
             </section>
           </article>
