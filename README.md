@@ -2,6 +2,35 @@
 
 AI assistant for triaging GitHub issues and preparing pull request reviews.
 
+## Run the Docker demo
+
+Build the image and open the dashboard at `http://127.0.0.1:7860`:
+
+```bash
+docker build -t maintainerlens-demo .
+docker run --rm -p 127.0.0.1:7860:7860 \
+  --mount source=maintainerlens-demo-data,target=/app/data \
+  maintainerlens-demo
+```
+
+FastAPI serves the compiled Vue dashboard and API on the same port. The named
+volume keeps reply and issue reviews between container restarts. Public issue
+and PR loading works without a token. To enable Hugging Face generation or
+use GitHub authentication, add `--env-file .env` to `docker run`. To enable
+semantic related-issue search, add `-e MAINTAINERLENS_SEMANTIC_SEARCH=1`. The
+first semantic lookup downloads the embedding model. Mount a second named
+volume at `/app/.cache` to reuse the downloaded model across runs.
+
+Check the packaged dashboard and API, including live public repository loading:
+
+```bash
+python tests/smoke_demo.py http://127.0.0.1:7860 --repository psf/requests
+```
+
+GitHub Actions runs the Python tests, builds Vue, and starts the Docker demo on
+pushes and pull requests. The CI smoke test exercises health, built assets,
+and both API routes without GitHub or Hugging Face credentials.
+
 ## Run locally
 
 Create and activate a virtual environment, then install the dependencies:

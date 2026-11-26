@@ -1,0 +1,17 @@
+**
+!Dockerfile
+!requirements-api.txt
+!requirements-semantic.txt
+!app/
+app/**
+!app/*.py
+!frontend/
+frontend/**
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.js
+!frontend/src/
+!frontend/src/**
+**/.env
+**/.env.*
