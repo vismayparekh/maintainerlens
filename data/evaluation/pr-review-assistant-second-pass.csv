@@ -1,0 +1,11 @@
+run_id,repository,number,reviewer,change_accuracy,author_intent,actionable_checks,corrected_checklist,notes
+8707672d3295407bb1c2ca98af501bce,scikit-learn/scikit-learn,35333,assistant_second_pass,2,2,2,,The brief preserves the active performance topic and the checklist keeps the struck-through topics out. The file and documentation build checks fit this PR.
+8707672d3295407bb1c2ca98af501bce,pandas-dev/pandas,71939,assistant_second_pass,2,2,1,"1. Check the GroupBy and Index docstrings against the existing any/all behavior.
+2. Verify that the wording resolves #71475 and states any difference between the two APIs.
+3. Inspect both diffs to confirm that the changes are documentation-only.","The brief captures the documentation purpose. Several checklist items follow generic template boxes or the AI disclosure, which takes attention away from the return-type wording."
+8707672d3295407bb1c2ca98af501bce,scikit-learn/scikit-learn,35451,assistant_second_pass,2,2,2,,"The brief describes simultaneous coefficient drops accurately and attributes the test results to the author. The checklist focuses on the matrix, feature count, and correlation updates and both solver paths."
+8707672d3295407bb1c2ca98af501bce,pandas-dev/pandas,72354,assistant_second_pass,2,2,2,,The brief preserves the empty-selection edge case and the different expected outcomes for the existing and new columns. The checks cover both outcomes and protect the non-empty-mask path.
+8707672d3295407bb1c2ca98af501bce,scikit-learn/scikit-learn,35463,assistant_second_pass,2,2,2,,The summary identifies all three compositions and explains the repeated-row equivalence aim. The checklist makes the custom scorer and downstream routing concrete review targets.
+8707672d3295407bb1c2ca98af501bce,pandas-dev/pandas,72327,assistant_second_pass,2,2,1,"1. Verify the Amsterdam spring-forward test covers Series and DataFrame with zoneinfo, dateutil, and pytz.
+2. Check that the one-hour offset advances elapsed time and the one-day offset preserves local wall time on the next day.
+3. Check that assertions pin the expected timestamps and that the change stays within the regression test.",The brief correctly identifies a test-only change. The checklist gives weight to template fields and asks about a follow-up issue when the author described the Cairo case as out of scope.

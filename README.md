@@ -157,6 +157,12 @@ The CSV contains one row per reviewer and PR. When multiple people annotate,
 use `--reviewer-id` to export one reviewer for `app.pr_benchmark score`.
 Compare those scores with the development grade sheet after the blind review.
 
+A [second assistant review](data/evaluation/pr-review-assistant-second-pass.csv)
+of the same six briefs matched all 18 initial ratings and supplied two replacement
+checklists. This pass used the original benchmark context and outputs. The local
+Argilla dataset `pr-review-assistant-second-pass` holds those submissions, and
+`pr-review-development` remains available for independent human feedback.
+
 ### Background semantic matches
 
 To enable hybrid related-issue search in the Vue dashboard, install the optional
