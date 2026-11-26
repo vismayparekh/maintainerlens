@@ -29,7 +29,7 @@ def verify_demo(base_url, repository=None):
                 if json.load(response) != {"status": "ok"}:
                     raise ValueError("Unexpected health response.")
             break
-        except (URLError, TimeoutError):
+        except (URLError, ConnectionError, TimeoutError):
             if monotonic() >= deadline:
                 raise
             sleep(1)
