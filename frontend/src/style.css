@@ -1252,6 +1252,59 @@ a {
   padding: 0;
 }
 
+.demo-anchor {
+  text-decoration: none;
+}
+
+.demo-repo-bar {
+  display: block;
+}
+
+.demo-repo-bar .limit-field {
+  display: block;
+  width: min(100%, 330px);
+}
+
+.demo-repo-bar select {
+  width: 100%;
+}
+
+.demo-benchmarks {
+  margin-top: 30px;
+  scroll-margin-top: 70px;
+}
+
+.demo-benchmarks h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #293d4f;
+}
+
+.metrics-row.demo-benchmark-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.demo-original-reply {
+  margin-top: 14px;
+  color: #596a79;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.demo-original-reply summary {
+  cursor: pointer;
+}
+
+.demo-original-reply p {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 650px) {
+  .metrics-row.demo-benchmark-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pull-request-workspace > .issue-detail {
   margin-top: 16px;
   color: #596a79;

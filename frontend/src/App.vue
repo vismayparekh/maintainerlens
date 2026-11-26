@@ -1,8 +1,9 @@
 <script setup>
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import PullRequests from './components/PullRequests.vue'
+import { demoRepositories, isStaticDemo, loadDemoRepository } from './demo'
 
 const categories = ['Bug', 'Question', 'Feature request', 'Other']
 const filters = ['All', ...categories]
@@ -12,6 +13,7 @@ const inboxView = ref('issues')
 const pullRequestsView = ref(null)
 const loadingPullRequests = ref(false)
 const issues = ref([])
+const loadedIssueRepository = ref('')
 const selectedNumber = ref(null)
 const categoryFilter = ref('All')
 const searchQuery = ref('')
@@ -47,6 +49,16 @@ function fetchInbox() {
   }
   return fetchIssues()
 }
+
+function selectInbox(view) {
+  if (view === inboxView.value) return
+  inboxView.value = view
+  if (isStaticDemo) void fetchInbox()
+}
+
+onMounted(() => {
+  if (isStaticDemo) void fetchInbox()
+})
 
 const selectedIssue = computed(
   () => issues.value.find((issue) => issue.number === selectedNumber.value) ?? null,
@@ -165,16 +177,16 @@ async function fetchIssues() {
   selectedNumber.value = null
   clearReview()
   try {
-    const params = new URLSearchParams({
-      repository: repository.value.trim(),
-      limit: String(issueLimit.value),
-    })
-    const response = await fetch(`/api/issues?${params}`)
-    if (!response.ok) throw new Error(await responseMessage(response))
-    const result = await response.json()
+    const repo = repository.value.trim()
+    const result = isStaticDemo
+      ? await loadDemoRepository(repo)
+      : await fetchRepositoryIssues(repo)
+    loadedIssueRepository.value = repo
     issues.value = result.issues
     selectedNumber.value = result.issues[0]?.number ?? null
-    statusMessage.value = result.issues.length
+    statusMessage.value = isStaticDemo
+      ? `${result.issues.length} curated issue examples from ${repo}.`
+      : result.issues.length
       ? `Loaded ${result.issues.length} open issues and compared against ${result.historical_issue_count} recently closed issues.`
       : 'No open issues were found for this repository.'
     if (result.related_lookup_id) void fetchRelatedIssues(result.related_lookup_id)
@@ -183,6 +195,13 @@ async function fetchIssues() {
   } finally {
     loadingIssues.value = false
   }
+}
+
+async function fetchRepositoryIssues(repo) {
+  const params = new URLSearchParams({ repository: repo, limit: String(issueLimit.value) })
+  const response = await fetch(`/api/issues?${params}`)
+  if (!response.ok) throw new Error(await responseMessage(response))
+  return response.json()
 }
 
 async function generateAnalysis() {
@@ -378,7 +397,7 @@ async function downloadReviews(kind) {
         <span class="brand-name">Maintainer<span>Lens</span></span>
       </a>
       <div class="topbar-right">
-        <span class="privacy-indicator"><span class="status-dot"></span> Local workspace</span>
+        <span class="privacy-indicator"><span class="status-dot"></span> {{ isStaticDemo ? 'Portfolio demo' : 'Local workspace' }}</span>
         <a
           class="topbar-link"
           href="https://github.com/vismayparekh/maintainerlens"
@@ -392,8 +411,12 @@ async function downloadReviews(kind) {
       <section class="intro">
         <div>
           <p class="eyebrow">GITHUB TRIAGE WORKSPACE</p>
-          <h1>{{ isPullRequestsView ? 'Get oriented before reviewing a pull request.' : 'Make the next issue easier to triage.' }}</h1>
-          <p class="intro-copy">
+          <h1 v-if="isStaticDemo">Explore a GitHub maintainer’s workflow.</h1>
+          <h1 v-else>{{ isPullRequestsView ? 'Get oriented before reviewing a pull request.' : 'Make the next issue easier to triage.' }}</h1>
+          <p v-if="isStaticDemo" class="intro-copy">
+            Browse real issues and pull requests from scikit-learn and pandas, then see how MaintainerLens performed in evaluation.
+          </p>
+          <p v-else class="intro-copy">
             {{ isPullRequestsView
               ? 'See which files changed, find issue references, and prepare a review checklist.'
               : 'Review incoming reports, surface related issues, and prepare a human-reviewed summary in one place.' }}
@@ -401,16 +424,26 @@ async function downloadReviews(kind) {
         </div>
         <div class="intro-note">
           <span class="note-icon">✳</span>
-          <span>AI suggestions stay yours to review.<br /><strong>Nothing is posted to GitHub.</strong></span>
+          <span v-if="isStaticDemo">Explore saved AI briefs and a reviewed reply.<br /><strong>Examples are bundled with the demo.</strong></span>
+          <span v-else>AI suggestions stay yours to review.<br /><strong>Nothing is posted to GitHub.</strong></span>
         </div>
       </section>
 
       <div class="inbox-view-switch filter-row" role="group" aria-label="Inbox view">
-        <button class="filter-chip" :class="{ active: !isPullRequestsView }" :aria-pressed="!isPullRequestsView" @click="inboxView = 'issues'">Issues</button>
-        <button class="filter-chip" :class="{ active: isPullRequestsView }" :aria-pressed="isPullRequestsView" @click="inboxView = 'pull-requests'">Pull requests</button>
+        <button class="filter-chip" :class="{ active: !isPullRequestsView }" :aria-pressed="!isPullRequestsView" @click="selectInbox('issues')">Issues</button>
+        <button class="filter-chip" :class="{ active: isPullRequestsView }" :aria-pressed="isPullRequestsView" @click="selectInbox('pull-requests')">Pull requests</button>
+        <a v-if="isStaticDemo" class="filter-chip demo-anchor" href="#benchmarks">Benchmarks</a>
       </div>
 
-      <form class="repository-bar" @submit.prevent="fetchInbox">
+      <div v-if="isStaticDemo" class="repository-bar demo-repo-bar">
+        <label class="limit-field">
+          <span class="field-label">Example repository</span>
+          <select v-model="repository" :disabled="loadingInbox" @change="fetchInbox">
+            <option v-for="repo in demoRepositories" :key="repo" :value="repo">{{ repo }}</option>
+          </select>
+        </label>
+      </div>
+      <form v-else class="repository-bar" @submit.prevent="fetchInbox">
         <label class="repo-field">
           <span class="field-label">GitHub repository</span>
           <span class="repo-input-wrap">
@@ -451,7 +484,7 @@ async function downloadReviews(kind) {
         <span class="status-dot"></span>{{ statusMessage }}
       </div>
 
-      <section v-if="issues.length" class="metrics-row" aria-label="Issue summary">
+      <section v-if="issues.length && !isStaticDemo" class="metrics-row" aria-label="Issue summary">
         <div class="metric-card">
           <span class="metric-label">OPEN ISSUES</span>
           <strong>{{ issues.length }}</strong>
@@ -479,9 +512,9 @@ async function downloadReviews(kind) {
           <div class="panel-heading">
             <div>
               <p class="eyebrow">INBOX</p>
-              <h2>Open issues <span class="count-pill">{{ visibleIssues.length }}</span></h2>
+              <h2>{{ isStaticDemo ? 'Example issues' : 'Open issues' }} <span class="count-pill">{{ visibleIssues.length }}</span></h2>
             </div>
-            <button class="icon-button" title="Refresh issues" @click="fetchIssues">
+            <button v-if="!isStaticDemo" class="icon-button" title="Refresh issues" @click="fetchIssues">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M20 7v5h-5M4 17v-5h5" />
                 <path d="M6.2 9a7 7 0 0 1 11.6-2L20 12M4 12l2.2 5a7 7 0 0 0 11.6-2" />
@@ -523,7 +556,7 @@ async function downloadReviews(kind) {
               </span>
               <span class="issue-row-title">{{ issue.title }}</span>
               <span class="issue-row-meta">
-                <span>{{ issue.labels.slice(0, 2).join(' · ') || 'Unlabeled' }}</span>
+                <span>{{ issue.labels.slice(0, 2).join(' · ') || (isStaticDemo ? 'GitHub issue' : 'Unlabeled') }}</span>
                 <span v-if="issue.similar_issues.length" class="match-count">
                   {{ issue.similar_issues.length }} related
                 </span>
@@ -544,9 +577,9 @@ async function downloadReviews(kind) {
           <article class="panel issue-detail">
             <div class="detail-kicker">
               <a :href="selectedIssue.url" target="_blank" rel="noreferrer">
-                {{ repository }} <span>›</span> #{{ selectedIssue.number }} ↗
+                {{ loadedIssueRepository }} <span>›</span> #{{ selectedIssue.number }} ↗
               </a>
-              <span class="open-label"><span class="status-dot"></span> Open</span>
+              <span class="open-label"><span class="status-dot"></span> {{ isStaticDemo ? 'Example' : 'Open' }}</span>
             </div>
             <h2 class="issue-title">{{ selectedIssue.title }}</h2>
             <div class="detail-badges">
@@ -560,8 +593,8 @@ async function downloadReviews(kind) {
 
             <section class="description-section">
               <div class="section-title">
-                <h3>Issue description</h3>
-                <span>{{ selectedIssue.body.length.toLocaleString() }} characters</span>
+                <h3>{{ isStaticDemo ? 'Report in brief' : 'Issue description' }}</h3>
+                <span v-if="!isStaticDemo">{{ selectedIssue.body.length.toLocaleString() }} characters</span>
               </div>
               <div
                 v-if="issueDescriptionHtml"
@@ -592,7 +625,7 @@ async function downloadReviews(kind) {
                   <span class="similar-copy">
                     <strong>#{{ match.number }} {{ match.title }}</strong>
                     <span>
-                      {{ match.is_closed ? 'Closed history' : 'Open issue' }} · {{ match.category }}
+                      {{ isStaticDemo ? 'Benchmark example' : match.is_closed ? 'Closed history' : 'Open issue' }} · {{ match.category }}
                       · {{ match.method === 'semantic' ? 'Semantic similarity' : 'Text similarity' }}
                     </span>
                   </span>
@@ -605,11 +638,18 @@ async function downloadReviews(kind) {
               <p v-else-if="relatedStatus === 'unavailable'" class="empty-similar" role="status">
                 Semantic search is unavailable. Fetch issues again to retry.
               </p>
-              <p v-else class="empty-similar">No related issues passed the similarity filters.</p>
+              <p v-else class="empty-similar">{{ isStaticDemo ? 'No related issues in this example.' : 'No related issues passed the similarity filters.' }}</p>
             </section>
           </article>
 
-          <article class="panel ai-panel">
+          <article v-if="isStaticDemo" class="panel ai-panel">
+            <h3>Example triage note</h3>
+            <div class="analysis-summary">
+              <p>{{ selectedIssue.example_summary.summary }}</p>
+              <p>{{ selectedIssue.example_summary.rationale }}</p>
+            </div>
+          </article>
+          <article v-else class="panel ai-panel">
             <div class="ai-panel-heading">
               <div class="ai-icon">✳</div>
               <div>
@@ -658,7 +698,7 @@ async function downloadReviews(kind) {
             </button>
           </article>
 
-          <article v-if="analysis" class="panel review-panel">
+          <article v-if="!isStaticDemo && analysis" class="panel review-panel">
             <div class="review-heading">
               <div>
                 <p class="eyebrow">YOUR DECISION</p>
@@ -697,7 +737,21 @@ async function downloadReviews(kind) {
             </p>
           </article>
 
-          <article class="panel review-panel">
+          <article v-if="isStaticDemo && selectedIssue.example_reply" class="panel review-panel">
+            <h3>Example maintainer reply</h3>
+            <div class="analysis-summary">
+              <p>{{ selectedIssue.example_reply.reviewed }}</p>
+              <span class="field-label">Reproduction checklist</span>
+              <ul class="pull-review-checklist">
+                <li v-for="step in selectedIssue.example_reply.checklist" :key="step">{{ step }}</li>
+              </ul>
+            </div>
+            <details class="demo-original-reply">
+              <summary>View original AI draft</summary>
+              <p>{{ selectedIssue.example_reply.original }}</p>
+            </details>
+          </article>
+          <article v-if="!isStaticDemo" class="panel review-panel">
             <h3>Maintainer reply</h3>
             <div class="review-actions reply-mode-actions">
               <button
@@ -764,9 +818,34 @@ async function downloadReviews(kind) {
       </section>
       </template>
 
+      <section v-if="isStaticDemo" id="benchmarks" class="demo-benchmarks" aria-labelledby="benchmarks-heading">
+        <div class="section-title">
+          <h2 id="benchmarks-heading">Benchmarks</h2>
+          <a class="topbar-link" href="https://github.com/vismayparekh/maintainerlens#reproduce-the-development-baseline" target="_blank" rel="noreferrer">Evaluation details ↗</a>
+        </div>
+        <div class="metrics-row demo-benchmark-metrics">
+          <article class="metric-card">
+            <span class="metric-label">ISSUE CLASSIFICATION</span>
+            <strong>95% macro F1</strong>
+            <span class="metric-detail">Rule-based baseline on 27 development issues</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">DUPLICATE RETRIEVAL</span>
+            <strong>10 → 17 of 20 pairs</strong>
+            <span class="metric-detail">Text overlap vs. hybrid on the same 40-issue holdout</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">PR REVIEW CHECKLISTS</span>
+            <strong>10 of 12 points</strong>
+            <span class="metric-detail">Assistant-rated actionability on six development briefs</span>
+          </article>
+        </div>
+      </section>
+
       <footer class="app-footer">
-        <span>MAINTAINERLENS <i>·</i> AI-ASSISTED, HUMAN-REVIEWED</span>
-        <div class="review-export-actions">
+        <span>MAINTAINERLENS <i>·</i> {{ isStaticDemo ? 'PORTFOLIO DEMO' : 'AI-ASSISTED, HUMAN-REVIEWED' }}</span>
+        <a v-if="isStaticDemo" class="topbar-link" href="https://github.com/vismayparekh/maintainerlens#run-the-docker-demo" target="_blank" rel="noreferrer">Run the full app ↗</a>
+        <div v-else class="review-export-actions">
           <button class="text-button" :disabled="downloadingReviews" @click="downloadReviews('triage')">
             Export saved reviews ↓
           </button>

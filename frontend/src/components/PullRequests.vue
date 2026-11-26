@@ -2,6 +2,7 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { computed, ref } from 'vue'
+import { isStaticDemo, loadDemoRepository } from '../demo'
 
 const loading = defineModel('loading', { type: Boolean, default: false })
 const pulls = ref([])
@@ -70,9 +71,11 @@ async function loadPullRequests(repository, limit) {
   loadedRepository.value = ''
   try {
     const params = new URLSearchParams({ repository: repo, limit: String(limit) })
-    const result = await requestJson(`/api/pull-requests?${params}`)
+    const result = isStaticDemo
+      ? (await loadDemoRepository(repo)).pullRequests.map((details) => details.pull_request)
+      : (await requestJson(`/api/pull-requests?${params}`)).pull_requests
     loadedRepository.value = repo
-    pulls.value = result.pull_requests
+    pulls.value = result
     if (pulls.value.length) void selectPull(pulls.value[0])
   } catch (error) {
     listError.value = error.message
@@ -89,8 +92,12 @@ async function selectPull(pull) {
   detailsRequest = request
   loadingDetails.value = true
   try {
-    const result = await requestJson(pullUrl(pull.number), { signal: request.signal })
-    if (detailsRequest === request) details.value = result
+    const result = isStaticDemo
+      ? (await loadDemoRepository(loadedRepository.value)).pullRequests.find((example) => example.pull_request.number === pull.number)
+      : await requestJson(pullUrl(pull.number), { signal: request.signal })
+    if (detailsRequest !== request) return
+    details.value = result
+    if (isStaticDemo) brief.value = result.example_brief
   } catch (error) {
     if (detailsRequest === request) detailError.value = error.message
   } finally {
@@ -134,9 +141,9 @@ defineExpose({ loadPullRequests })
     </section>
 
     <section v-else class="triage-layout">
-      <aside class="issue-panel panel" aria-label="Open pull requests">
+      <aside class="issue-panel panel" :aria-label="isStaticDemo ? 'Example pull requests' : 'Open pull requests'">
         <div class="panel-heading">
-          <h2>Open pull requests <span class="count-pill">{{ pulls.length }}</span></h2>
+          <h2>{{ isStaticDemo ? 'Example pull requests' : 'Open pull requests' }} <span class="count-pill">{{ pulls.length }}</span></h2>
         </div>
         <div class="issue-list">
           <button
@@ -149,7 +156,7 @@ defineExpose({ loadPullRequests })
           >
             <span class="issue-row-top">
               <span class="issue-number">#{{ pull.number }}</span>
-              <span class="label-chip">{{ statusLabel(pull.status) }}</span>
+              <span class="label-chip">{{ isStaticDemo ? 'Example' : statusLabel(pull.status) }}</span>
             </span>
             <span class="issue-row-title">{{ pull.title }}</span>
             <span v-if="pull.author" class="issue-row-meta">{{ pull.author }}</span>
@@ -161,7 +168,7 @@ defineExpose({ loadPullRequests })
         <article class="panel issue-detail">
           <div class="detail-kicker">
             <a :href="activePull.url" target="_blank" rel="noreferrer">{{ loadedRepository }} › #{{ activePull.number }} ↗</a>
-            <span class="label-chip">{{ statusLabel(activePull.status) }}</span>
+            <span class="label-chip">{{ isStaticDemo ? 'Example' : statusLabel(activePull.status) }}</span>
           </div>
           <h2 class="issue-title">{{ activePull.title }}</h2>
           <div v-if="details" class="detail-badges">
@@ -170,7 +177,7 @@ defineExpose({ loadPullRequests })
             <span class="label-chip">+{{ details.additions }} / −{{ details.deletions }}</span>
           </div>
           <section class="description-section">
-            <div class="section-title"><h3>Pull request description</h3></div>
+            <div class="section-title"><h3>{{ isStaticDemo ? 'Pull request in brief' : 'Pull request description' }}</h3></div>
             <div v-if="description" class="issue-description" v-html="description"></div>
             <p v-else class="issue-description-empty">No description provided.</p>
           </section>
@@ -207,8 +214,8 @@ defineExpose({ loadPullRequests })
         </article>
 
         <article v-if="details" class="panel ai-panel">
-          <h3>AI review brief</h3>
-          <p class="ai-empty">Uses the pull request description and file metadata. Open GitHub to review the diff.</p>
+          <h3>{{ isStaticDemo ? 'Saved AI review brief' : 'AI review brief' }}</h3>
+          <p class="ai-empty">{{ isStaticDemo ? 'From the six-PR development benchmark.' : 'Uses the pull request description and file metadata. Open GitHub to review the diff.' }}</p>
           <p v-if="briefError" class="notice notice-error" role="alert">{{ briefError }}</p>
           <div v-if="brief" class="analysis-summary">
             <span class="field-label">Summary</span>
@@ -218,7 +225,7 @@ defineExpose({ loadPullRequests })
               <li v-for="(step, index) in brief.checklist" :key="index">{{ step }}</li>
             </ul>
           </div>
-          <button class="button button-secondary analyze-button" :disabled="loadingBrief" @click="generateBrief">
+          <button v-if="!isStaticDemo" class="button button-secondary analyze-button" :disabled="loadingBrief" @click="generateBrief">
             {{ loadingBrief ? 'Generating review brief…' : brief ? 'Regenerate review brief' : 'Generate review brief' }}
           </button>
         </article>
