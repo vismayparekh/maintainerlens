@@ -67,6 +67,56 @@ The equivalent API routes are `GET /api/pull-requests`,
 Pass `repository=owner/repo` to each route. If you use a fine-grained token,
 enable read access to pull requests for the repository.
 
+### Evaluate PR review briefs
+
+The [PR development manifest](data/evaluation/pr-review-development.csv)
+contains six public PRs across scikit-learn and pandas, with two each for
+documentation, bug fixes, and tests. Capture their metadata and generate one
+brief per PR:
+
+```bash
+python -m app.pr_benchmark generate data/evaluation/pr-review-development.csv \
+  --snapshot data/evaluation/snapshots/pr-review-development.json \
+  --output data/evaluation/snapshots/pr-review-development-run-1.jsonl
+```
+
+The snapshot freezes PR descriptions and file metadata. A new run can use
+the same snapshot with a fresh output path. Each result records the model,
+elapsed inference time, and run ID. The scorer associates grades with the
+specific generated run. Snapshots and generated drafts stay local.
+
+Read the captured description and file metadata before grading the brief.
+Score each dimension on a 0–2 scale. Give 2 for fully meeting the criterion,
+1 for a useful result that needs a meaningful correction, and 0 for an absent
+or materially misleading result.
+
+| Dimension | Full-credit criterion |
+| --- | --- |
+| Change accuracy | Describes the visible scope correctly and attributes unverified results to the PR author. |
+| Author intent | Captures the main purpose and preserves qualifications, uncertainty, and crossed-out proposals. |
+| Actionable review checks | Provides concrete, PR-specific verification steps and avoids unsupported claims about implementation or tests. |
+
+The first development run (Nov 26, 2026) generated all six briefs using the
+configured DeepSeek V4.1 Flash model. An assistant graded each brief against
+the captured metadata. This is a development baseline with one reviewer.
+
+| Dimension | Score | Full-credit briefs |
+| --- | ---: | ---: |
+| Change accuracy | 12/12 | 6/6 |
+| Author intent | 12/12 | 6/6 |
+| Actionable review checks | 10/12 | 4/6 |
+
+The [grade sheet](data/evaluation/pr-review-development-grades.csv) records
+the findings and suggested corrections. The weaker checklists spent time on
+PR-template fields or broadened review to a case the author excluded. Score
+the existing run locally without calling the model again:
+
+```bash
+python -m app.pr_benchmark score \
+  data/evaluation/snapshots/pr-review-development-run-1.jsonl \
+  data/evaluation/pr-review-development-grades.csv
+```
+
 ### Background semantic matches
 
 To enable hybrid related-issue search in the Vue dashboard, install the optional
