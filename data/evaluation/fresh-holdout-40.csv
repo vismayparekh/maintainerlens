@@ -1,0 +1,41 @@
+repository,number,title,url,expected_category,duplicate_group
+psf/requests,6282,IPv6 Zone Identifiers are not correctly parsed (still),https://github.com/psf/requests/issues/6282,Bug,ipv6-zone-identifiers
+psf/requests,5775,RFC6874 IPv6 Zone Identifiers in urls not parsed correctly,https://github.com/psf/requests/issues/5775,Bug,ipv6-zone-identifiers
+psf/requests,6104,ValueError when calling requests.get on windows systems.,https://github.com/psf/requests/issues/6104,Bug,
+psf/requests,6027,Proxy authentication bug,https://github.com/psf/requests/issues/6027,Bug,
+numpy/numpy,20022,BUG: np.ma.testutils.assert_equal error on two np.nan,https://github.com/numpy/numpy/issues/20022,Bug,
+numpy/numpy,19045,BUG: Unexpected result in uint8 division on x86,https://github.com/numpy/numpy/issues/19045,Bug,
+numpy/numpy,26551,BUG: limit memory usage of python processes that uses Python,https://github.com/numpy/numpy/issues/26551,Bug,
+numpy/numpy,24313,BUG: astype changes the shape of structured arrays,https://github.com/numpy/numpy/issues/24313,Bug,
+scikit-learn/scikit-learn,28055,Infinite Loop in K-means when relocating empty clusters,https://github.com/scikit-learn/scikit-learn/issues/28055,Bug,
+scikit-learn/scikit-learn,26639,Scipy Warning Issued Only After LinearRegression calls,https://github.com/scikit-learn/scikit-learn/issues/26639,Bug,
+psf/requests,6980,m3u8 video error,https://github.com/psf/requests/issues/6980,Question,
+psf/requests,6967,Can't update to newest release,https://github.com/psf/requests/issues/6967,Question,
+psf/requests,6892,Issue with SSL verification using self-signed certificate in version 2.32.3,https://github.com/psf/requests/issues/6892,Question,
+psf/requests,6862,Timeout Issue When Scraping Emails from Multiple URLs Using Python requests,https://github.com/psf/requests/issues/6862,Question,
+numpy/numpy,26710,NumPy 2.0.0 on Python 3.12 causes binary compatibilty issues with numpy.dtype for pandas 2.1.1,https://github.com/numpy/numpy/issues/26710,Question,
+numpy/numpy,29010,Packaging openblas libraries with numpy wheel,https://github.com/numpy/numpy/issues/29010,Question,
+numpy/numpy,7967,Surprising behaviors of NumPy,https://github.com/numpy/numpy/issues/7967,Question,
+scikit-learn/scikit-learn,29757,Compiling Fails due to sklearn/metrics/pairwise.py,https://github.com/scikit-learn/scikit-learn/issues/29757,Question,
+scikit-learn/scikit-learn,28679,Slow training time when using train_test_split,https://github.com/scikit-learn/scikit-learn/issues/28679,Question,
+scikit-learn/scikit-learn,23158,"The score evaluation with ""roc_auc"" is not the same in  GridSearchCV() and  roc_auc_score() functon",https://github.com/scikit-learn/scikit-learn/issues/23158,Question,
+psf/requests,6915,HTTPDigestAuth add optional Realm parameter to the authentication,https://github.com/psf/requests/issues/6915,Feature request,
+psf/requests,6887,Automatically retry idempotent requests,https://github.com/psf/requests/issues/6887,Feature request,
+psf/requests,6902,support http3 quic,https://github.com/psf/requests/issues/6902,Feature request,
+psf/requests,6740,"Feature Request: `safe_json()` Method for Requests Library",https://github.com/psf/requests/issues/6740,Feature request,
+numpy/numpy,32765,ENH: Detect mixed bytes/text inputs during array conversion,https://github.com/numpy/numpy/issues/32765,Feature request,
+numpy/numpy,32599,"ENH: histogram_bin_edges: add an equal-frequency (quantile) binning strategy",https://github.com/numpy/numpy/issues/32599,Feature request,
+numpy/numpy,32603,"ENH: sinpi, cospi, asinpi, acospi, etc.: trigonometric functions in units of half turns",https://github.com/numpy/numpy/issues/32603,Feature request,
+numpy/numpy,32126,"ENH: support `where=` in MaskedArray reductions",https://github.com/numpy/numpy/issues/32126,Feature request,
+scikit-learn/scikit-learn,35388,"Add [E-means] clustering ([e-means: outperforming k-means (in one-tenth the epochs), 2026])",https://github.com/scikit-learn/scikit-learn/issues/35388,Feature request,e-means-clustering
+scikit-learn/scikit-learn,35383,Add e-means clustering (EMeans),https://github.com/scikit-learn/scikit-learn/issues/35383,Feature request,e-means-clustering
+psf/requests,7134,Add clear best practices for using timeouts in the documentation,https://github.com/psf/requests/issues/7134,Other,timeout-documentation
+psf/requests,7132,Improve documentation with best practices for request timeouts,https://github.com/psf/requests/issues/7132,Other,timeout-documentation
+psf/requests,5902,"DOC,BUG: 404: Spanish translation links require .html",https://github.com/psf/requests/issues/5902,Other,
+psf/requests,4267,Document Community Extensions,https://github.com/psf/requests/issues/4267,Other,
+numpy/numpy,33235,DOC: Bad issue link in release notes for v2.0.0,https://github.com/numpy/numpy/issues/33235,Other,
+numpy/numpy,33186,"DOC: remove remaining ""str or unicode"" wording from numpy.strings and reference docs",https://github.com/numpy/numpy/issues/33186,Other,
+numpy/numpy,32663,DOC: Contributor docs link to scikit-image website,https://github.com/numpy/numpy/issues/32663,Other,
+numpy/numpy,32102,DOC: Incorrect `spin build` command in docs,https://github.com/numpy/numpy/issues/32102,Other,
+scikit-learn/scikit-learn,34992,Incorrect random_state description in RANSACRegressor documentation,https://github.com/scikit-learn/scikit-learn/issues/34992,Other,
+scikit-learn/scikit-learn,34979,Clarify the random_state description in train_test_split documentation,https://github.com/scikit-learn/scikit-learn/issues/34979,Other,

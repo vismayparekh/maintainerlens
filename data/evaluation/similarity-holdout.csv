@@ -1,0 +1,15 @@
+repository,number,title,url,duplicate_group
+psf/requests,6894,timeout on requests.get is not working,https://github.com/psf/requests/issues/6894,requests-timeout-retry
+psf/requests,7126,requests that timeout are re-tried 3 times in some situations,https://github.com/psf/requests/issues/7126,requests-timeout-retry
+psf/requests,6711,breaking aws s3 usage with requests 2.32.0,https://github.com/psf/requests/issues/6711,requests-double-path-separators
+psf/requests,6784,Multiple path separators causes bad requests,https://github.com/psf/requests/issues/6784,requests-double-path-separators
+numpy/numpy,29349,ENH: Refine `np.ma.flatten_structured_array` to flatten via descr fields rather than elements,https://github.com/numpy/numpy/issues/29349,numpy-structured-array-flattening
+numpy/numpy,30269,BUG: `ma.flatten_structured_array` crashes on string fields due to infinite recursion in `flatten_sequence`,https://github.com/numpy/numpy/issues/30269,numpy-structured-array-flattening
+numpy/numpy,28340,Cannot unpickle file created by NumPy 2.x in NumPy 1.x,https://github.com/numpy/numpy/issues/28340,numpy-npy-backwards-compatibility
+numpy/numpy,30245,BUG: NumPy 2.0 .npy files not backwards compatible with NumPy 1.x,https://github.com/numpy/numpy/issues/30245,numpy-npy-backwards-compatibility
+scikit-learn/scikit-learn,31593,scikit-learn API reference on the website not rendering LaTeX correctly,https://github.com/scikit-learn/scikit-learn/issues/31593,sklearn-latex-rendering
+scikit-learn/scikit-learn,32150,Latex not correctly rendered for ridge,https://github.com/scikit-learn/scikit-learn/issues/32150,sklearn-latex-rendering
+scikit-learn/scikit-learn,31970,Create troubleshooting guide,https://github.com/scikit-learn/scikit-learn/issues/31970,sklearn-troubleshooting-guide
+scikit-learn/scikit-learn,31978,Create troubleshooting guide,https://github.com/scikit-learn/scikit-learn/issues/31978,sklearn-troubleshooting-guide
+scikit-learn/scikit-learn,32886,RFC Add gallery example with Array API support,https://github.com/scikit-learn/scikit-learn/issues/32886,sklearn-array-api-example
+scikit-learn/scikit-learn,35420,Example on how to use array API to accelerate a complex pipeline on a GPU,https://github.com/scikit-learn/scikit-learn/issues/35420,sklearn-array-api-example

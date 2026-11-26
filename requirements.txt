@@ -1,3 +1,2 @@
 gradio
-requests
-python-dotenv
+-r requirements-api.txt
