@@ -2,11 +2,15 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { computed, ref } from 'vue'
+import PullRequests from './components/PullRequests.vue'
 
 const categories = ['Bug', 'Question', 'Feature request', 'Other']
 const filters = ['All', ...categories]
 const repository = ref('scikit-learn/scikit-learn')
 const issueLimit = ref(10)
+const inboxView = ref('issues')
+const pullRequestsView = ref(null)
+const loadingPullRequests = ref(false)
 const issues = ref([])
 const selectedNumber = ref(null)
 const categoryFilter = ref('All')
@@ -33,6 +37,16 @@ const exportError = ref('')
 let analysisRequest = null
 let relatedRequest = null
 let replyRequest = null
+
+const isPullRequestsView = computed(() => inboxView.value === 'pull-requests')
+const loadingInbox = computed(() => isPullRequestsView.value ? loadingPullRequests.value : loadingIssues.value)
+
+function fetchInbox() {
+  if (isPullRequestsView.value) {
+    return pullRequestsView.value?.loadPullRequests(repository.value, issueLimit.value)
+  }
+  return fetchIssues()
+}
 
 const selectedIssue = computed(
   () => issues.value.find((issue) => issue.number === selectedNumber.value) ?? null,
@@ -377,11 +391,12 @@ async function downloadReviews(kind) {
     <main class="workspace">
       <section class="intro">
         <div>
-          <p class="eyebrow">ISSUE TRIAGE WORKSPACE</p>
-          <h1>Make the next issue easier to triage.</h1>
+          <p class="eyebrow">GITHUB TRIAGE WORKSPACE</p>
+          <h1>{{ isPullRequestsView ? 'Get oriented before reviewing a pull request.' : 'Make the next issue easier to triage.' }}</h1>
           <p class="intro-copy">
-            Review incoming reports, surface related issues, and prepare a human-reviewed
-            summary in one place.
+            {{ isPullRequestsView
+              ? 'See which files changed, find issue references, and prepare a review checklist.'
+              : 'Review incoming reports, surface related issues, and prepare a human-reviewed summary in one place.' }}
           </p>
         </div>
         <div class="intro-note">
@@ -390,7 +405,12 @@ async function downloadReviews(kind) {
         </div>
       </section>
 
-      <form class="repository-bar" @submit.prevent="fetchIssues">
+      <div class="inbox-view-switch filter-row" role="group" aria-label="Inbox view">
+        <button class="filter-chip" :class="{ active: !isPullRequestsView }" :aria-pressed="!isPullRequestsView" @click="inboxView = 'issues'">Issues</button>
+        <button class="filter-chip" :class="{ active: isPullRequestsView }" :aria-pressed="isPullRequestsView" @click="inboxView = 'pull-requests'">Pull requests</button>
+      </div>
+
+      <form class="repository-bar" @submit.prevent="fetchInbox">
         <label class="repo-field">
           <span class="field-label">GitHub repository</span>
           <span class="repo-input-wrap">
@@ -402,24 +422,27 @@ async function downloadReviews(kind) {
               v-model="repository"
               autocomplete="url"
               placeholder="owner/repo"
-              :disabled="loadingIssues"
+              :disabled="loadingInbox"
             />
           </span>
         </label>
         <label class="limit-field">
-          <span class="field-label">Open issues</span>
-          <select v-model.number="issueLimit" :disabled="loadingIssues">
-            <option :value="10">10 issues</option>
-            <option :value="20">20 issues</option>
+          <span class="field-label">{{ isPullRequestsView ? 'Open pull requests' : 'Open issues' }}</span>
+          <select v-model.number="issueLimit" :disabled="loadingInbox">
+            <option :value="10">10 {{ isPullRequestsView ? 'pull requests' : 'issues' }}</option>
+            <option :value="20">20 {{ isPullRequestsView ? 'pull requests' : 'issues' }}</option>
           </select>
         </label>
-        <button class="button button-primary fetch-button" :disabled="loadingIssues">
-          <span v-if="loadingIssues" class="spinner"></span>
-          <span>{{ loadingIssues ? 'Loading issues' : 'Fetch issues' }}</span>
-          <span v-if="!loadingIssues" aria-hidden="true">→</span>
+        <button class="button button-primary fetch-button" :disabled="loadingInbox">
+          <span v-if="loadingInbox" class="spinner"></span>
+          <span>{{ loadingInbox ? 'Loading…' : isPullRequestsView ? 'Fetch pull requests' : 'Fetch issues' }}</span>
+          <span v-if="!loadingInbox" aria-hidden="true">→</span>
         </button>
       </form>
 
+      <PullRequests v-show="isPullRequestsView" ref="pullRequestsView" v-model:loading="loadingPullRequests" />
+
+      <template v-if="!isPullRequestsView">
       <div v-if="pageError" class="notice notice-error" role="alert">
         <span class="notice-icon">!</span>
         <span>{{ pageError }}</span>
@@ -739,6 +762,7 @@ async function downloadReviews(kind) {
           <span><b>03</b> Review suggestions</span>
         </div>
       </section>
+      </template>
 
       <footer class="app-footer">
         <span>MAINTAINERLENS <i>·</i> AI-ASSISTED, HUMAN-REVIEWED</span>

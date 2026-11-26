@@ -1,6 +1,6 @@
 # MaintainerLens
 
-AI assistant for summarizing, classifying, and finding duplicate GitHub issues.
+AI assistant for triaging GitHub issues and preparing pull request reviews.
 
 ## Run locally
 
@@ -47,6 +47,25 @@ open issue against the other open issues in the current batch and the fetched
 closed-issue history. Up to three ranked suggestions link to candidate issues.
 Similarity scores are signals, not probabilities, and suggestions are not
 confirmed duplicates. Review them before taking action.
+
+### Review public pull requests
+
+In the Vue dashboard, switch to **Pull requests**, enter a public GitHub
+repository, and select **Fetch pull requests**. The inbox lists up to 20
+recently updated open pull requests, including drafts. Select a pull request
+to see its description, branches, total changed-file count, line counts, and
+a preview of up to 20 files. Issue references come from closing keywords and
+GitHub issue links in the description.
+
+Click **Generate review brief** for a summary and review checklist. Only this
+action sends the selected description and file metadata to the configured
+Hugging Face provider. The brief uses those inputs to suggest what to check.
+Open the pull request on GitHub to inspect the diff and review status.
+
+The equivalent API routes are `GET /api/pull-requests`,
+`GET /api/pull-requests/{number}`, and `POST /api/pull-requests/{number}/analyze`.
+Pass `repository=owner/repo` to each route. If you use a fine-grained token,
+enable read access to pull requests for the repository.
 
 ### Background semantic matches
 

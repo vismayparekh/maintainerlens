@@ -8,20 +8,27 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 import requests
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.responses import FileResponse, Response
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator
 
 from app.github_client import (
     MAX_ISSUES,
+    MAX_PULL_REQUESTS,
     GitHubIssue,
+    GitHubPullRequest,
+    PullRequestDetails,
     fetch_closed_issues,
     fetch_issues,
+    fetch_pull_request_details,
+    fetch_pull_requests,
 )
 from app.llm_client import (
     IssueAnalysisError,
     IssueAnalysisNotConfiguredError,
+    PullRequestAnalysis,
     analyze_issue,
+    analyze_pull_request,
     draft_issue_reply,
 )
 from app.processor import SimilarityMatch, classify_issue, find_similar_issues
@@ -73,6 +80,10 @@ class IssueListResponse(BaseModel):
     issues: list[IssueResponse]
     historical_issue_count: int
     related_lookup_id: str | None = None
+
+
+class PullRequestListResponse(BaseModel):
+    pull_requests: list[GitHubPullRequest]
 
 
 class AnalyzeIssueRequest(BaseModel):
@@ -176,6 +187,48 @@ def _similar_issue_response(
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/pull-requests", response_model=PullRequestListResponse)
+def list_repository_pull_requests(
+    repository: str = Query(min_length=1),
+    limit: int = Query(default=10, ge=1, le=MAX_PULL_REQUESTS),
+) -> PullRequestListResponse:
+    try:
+        return PullRequestListResponse(pull_requests=fetch_pull_requests(repository, limit))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail="Could not load pull requests from GitHub.") from exc
+
+
+@app.get("/api/pull-requests/{number}", response_model=PullRequestDetails)
+def read_pull_request(
+    number: int = Path(ge=1), repository: str = Query(min_length=1),
+) -> PullRequestDetails:
+    try:
+        return fetch_pull_request_details(repository, number)
+    except requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Pull request not found on GitHub.") from exc
+        raise HTTPException(status_code=502, detail="Could not load pull request details from GitHub.") from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail="Could not load pull request details from GitHub.") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/pull-requests/{number}/analyze", response_model=PullRequestAnalysis)
+def analyze_repository_pull_request(
+    number: int = Path(ge=1), repository: str = Query(min_length=1),
+) -> PullRequestAnalysis:
+    details = read_pull_request(number, repository)
+    try:
+        return analyze_pull_request(details)
+    except IssueAnalysisNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except IssueAnalysisError:
+        raise HTTPException(status_code=502, detail="Could not generate the pull request brief. Please retry.") from None
 
 
 @app.get("/api/issues", response_model=IssueListResponse)
