@@ -1,0 +1,33 @@
+repository,number,title,url,expected_category,duplicate_group,source_label
+pallets/flask,4355,Async/await， read file error: greenlet.error: cannot switch to a different thread,https://github.com/pallets/flask/issues/4355,Bug,,bug
+pallets/flask,4297,Blueprint.errorhandler restricts type of result function which avoids chaining,https://github.com/pallets/flask/issues/4297,Bug,,bug
+pallets/flask,4295,error handler type check fails,https://github.com/pallets/flask/issues/4295,Bug,,bug
+pallets/flask,4037,The Blueprint(url_prefix) parameter is not working when using nesting blueprint,https://github.com/pallets/flask/issues/4037,Bug,,bug
+python/cpython,162745,A failed `curses.newterm()` leaves a stale `new_prescr()` screen,https://github.com/python/cpython/issues/162745,Bug,,type-bug
+python/cpython,162743,statistics.correlation() returns -0.2 for two timestamp series with an exact correlation of +1,https://github.com/python/cpython/issues/162743,Bug,,type-bug
+python/cpython,162741,"tarfile with errors=""strict"" cannot read long names cut mid-character",https://github.com/python/cpython/issues/162741,Bug,,type-bug
+python/cpython,162738,Self-referential `exception.__context__`,https://github.com/python/cpython/issues/162738,Bug,,type-bug
+streamlit/streamlit,14706,Screen is not empty after clearing all contents and rerun.,https://github.com/streamlit/streamlit/issues/14706,Question,,type:question
+streamlit/streamlit,13063,[Request for feedback] Use-cases for `add_rows`,https://github.com/streamlit/streamlit/issues/13063,Question,,type:question
+streamlit/streamlit,11726,Unable to deploy: 403 Error,https://github.com/streamlit/streamlit/issues/11726,Question,,type:question
+streamlit/streamlit,9364,streamlit unable to maximize the matplotlib fig,https://github.com/streamlit/streamlit/issues/9364,Question,,type:question
+streamlit/streamlit,8966,Question: when trying to run a test (Error: protoc version 3.12.4 is < 3.20),https://github.com/streamlit/streamlit/issues/8966,Question,,type:question
+streamlit/streamlit,8848,"My streamlit page is just blank. it shows ""please wait"" and displays nothing else",https://github.com/streamlit/streamlit/issues/8848,Question,,type:question
+streamlit/streamlit,7926,Slow,https://github.com/streamlit/streamlit/issues/7926,Question,,type:question
+streamlit/streamlit,7735,Why are my static resources not accessible?,https://github.com/streamlit/streamlit/issues/7735,Question,,type:question
+python/cpython,162749,Improve AC generated code for conversion of int to Py_ssize_t,https://github.com/python/cpython/issues/162749,Feature request,,type-feature
+python/cpython,162705,Approaches to prevent memory from QSBR related growth with blocking C calls in free-threading,https://github.com/python/cpython/issues/162705,Feature request,,type-feature
+python/cpython,162648,Suggestion for a helper function for email.utils,https://github.com/python/cpython/issues/162648,Feature request,,type-feature
+python/cpython,162637,Prefer the tail-calling interpreter by default when supported,https://github.com/python/cpython/issues/162637,Feature request,,type-feature
+python/cpython,162635,Set external flag on interpreter frames to 0,https://github.com/python/cpython/issues/162635,Feature request,,type-feature
+python/cpython,162540,Implement PEP 824 - None-coalescing operator,https://github.com/python/cpython/issues/162540,Feature request,,type-feature
+python/cpython,162537,Add tkinter support for Tcl channels,https://github.com/python/cpython/issues/162537,Feature request,,type-feature
+python/cpython,162513,Speed up equality comparisons between contiguous byte `memoryview`s with `memcmp()`,https://github.com/python/cpython/issues/162513,Feature request,,type-feature
+pallets/flask,6165,update docs for `MAX_CONTENT_LENGTH`,https://github.com/pallets/flask/issues/6165,Other,,docs
+pallets/flask,5881,asgiref fails with gevent patching,https://github.com/pallets/flask/issues/5881,Other,,docs
+pallets/flask,5825,Document 415 on the receiving json section,https://github.com/pallets/flask/issues/5825,Other,,docs
+pallets/flask,5817,asyncio is not compatible with gevent,https://github.com/pallets/flask/issues/5817,Other,,docs
+python/cpython,162604,"Docs: the Reference says an ordered comparison with `Decimal('NaN')` is false, but it raises `InvalidOperation`",https://github.com/python/cpython/issues/162604,Other,,docs
+python/cpython,162603,"Docs: `str()` of a `SyntaxError` is not only the error message, and `SyntaxError.msg` is not documented",https://github.com/python/cpython/issues/162603,Other,,docs
+python/cpython,162602,"Docs: the Reference says integer literals have no length limit, but some long decimal literals fail to compile",https://github.com/python/cpython/issues/162602,Other,,docs
+python/cpython,162601,"Docs: the Reference says the exception is not available in a `finally` clause, but `sys.exception()` and a bare `raise` see it",https://github.com/python/cpython/issues/162601,Other,,docs

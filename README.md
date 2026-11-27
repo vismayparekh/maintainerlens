@@ -394,27 +394,73 @@ summary reviews. An issue can have more than one reply trial.
 
 ### Compare reply drafting time
 
-1. Choose public issues of similar complexity and assign each issue to manual
-   or assisted mode before participants see it. Give both groups access to the
-   same issue descriptions and related issues. Alternate the mode order across
-   participants and give each participant each issue only once.
-2. Start the assigned mode at the same point in the review, then save when the
-   reply and checklist are ready. Record generation failures and abandoned
-   trials separately. The CSV contains completed trials.
-3. Export reply reviews. Have a reviewer check the final reply and checklist
-   against the issue, ideally without seeing the mode. Set `factual_error` to
-   `yes` or `no` for each reviewed row and leave unchecked rows blank.
-4. Run the report on the export for the trial cohort:
+The [reply pilot](data/evaluation/reply-pilot.csv) uses eight public GitHub
+issues from pandas and Pydantic. Recruit at least two reviewers and assign
+sequences A and B in turn. Each reviewer sees all eight issues once, with four
+manual and four assisted replies. Sequence B swaps the assigned mode for every
+issue, so each case can be compared across reviewers. The study covers reply
+drafting with the issue description as context. It leaves related-issue search
+and AI summaries out of both conditions.
+
+1. Install the dependencies from **Run locally** and configure the Hugging
+   Face provider. Build the dashboard once, then serve it with a separate
+   SQLite file per participant so each export only contains their study trials.
+   Stop and restart the pilot server with a fresh path between participants.
 
    ```bash
-   python -m app.reply_benchmark ~/Downloads/maintainer_reply_trials.csv
+   (cd frontend && npm ci && npm run build)
+   MAINTAINERLENS_REVIEW_DB=.cache/reply-pilot/reviewer-01.sqlite3 \
+     python -m uvicorn app.web:app --host 127.0.0.1 --port 7872
    ```
 
-The report shows median completion time per mode, the difference between
-medians, factual errors among checked trials, and assisted drafts accepted
-without edits. Collect human trials before reporting a time-savings result.
+2. Print the assigned sequence from another terminal and give that reviewer only
+   their assigned list. Use `plan B` for the second reviewer.
+
+   ```bash
+   python -m app.reply_pilot plan A --base-url http://127.0.0.1:7872
+   ```
+
+3. For each link in order, read the issue in MaintainerLens and then click
+   **Write from scratch** (manual) or **Generate reply draft** (assisted).
+   Draft a reply you would send as a maintainer and add a reproduction checklist
+   only where it applies. Use the same instructions in both modes. Use only the
+   supplied issue description and the assigned mode. Click **Save reply review**
+   once when the reply is ready. If a draft fails or a case is abandoned, log the
+   reason and move on. The timer includes generation latency and records
+   completed trials. Use **Export reply reviews** and keep a separate CSV for
+   each participant, even if it only contains the header.
+
+4. Create a shuffled quality-review sheet that hides modes, times, and original
+   drafts. Ask an independent reviewer to compare the final reply and checklist
+   with the issue description. Mark `factual_error` as `yes` for any factual
+   error or unsupported claim and `no` otherwise. Leave unchecked rows blank.
+   Keep exports and grades local unless participants agree to share them.
+
+   ```bash
+   python -m app.reply_pilot blind --group-a reviewer-01.csv \
+     --group-b reviewer-02.csv --output blinded-replies.csv
+   python -m app.reply_pilot score --group-a reviewer-01.csv \
+     --group-b reviewer-02.csv --grades blinded-replies.csv
+   ```
+
+Repeat `--group-a` and `--group-b` as more participants join. Report completion
+counts, factual errors among checked replies, unchanged assisted drafts, and the
+case-matched drafting-time difference. The last metric compares median manual
+and assisted times within each issue completed in both modes, then takes the
+median of those differences. Use the same model and collect participant runs
+close together because the public issue descriptions can change. Describe the
+findings as an exploratory pilot with the exact participant count. The
+`python -m app.reply_benchmark <export.csv>` command still summarizes one
+standalone export.
 
 ## Evaluate the baseline
+
+The [evaluation report](data/evaluation/2026-11-27-results.md) records live
+response times, the classifier holdout, and the LoRA experiment. The
+[assistant quality review](data/evaluation/assistant-quality-review.md)
+covers PR checklists, issue labels, and reply accuracy. The
+[published classifier](https://huggingface.co/vismayparekh/maintainerlens-issue-classifier)
+includes its model card and holdout manifest.
 
 Create a CSV of recent issues to label:
 
@@ -489,11 +535,12 @@ returned and recall uses all annotated links in the evaluated pools.
 
 ### Reproduce the development baseline
 
-The [published benchmark](https://huggingface.co/datasets/vismayparekh/maintainerlens-benchmark)
-contains the category and similarity splits. The local
-[dataset card](data/evaluation/README.md) documents the development and
-test splits for Hugging Face Datasets. Capture the development issue text once,
-then reuse the same snapshots for later comparisons:
+The [published Hugging Face benchmark](https://huggingface.co/datasets/vismayparekh/maintainerlens-benchmark)
+contains the category and duplicate-retrieval development and test splits.
+Use the [initial release revision](https://huggingface.co/datasets/vismayparekh/maintainerlens-benchmark/tree/b8921856888c18153275eea26ec254b85f7ee7f2)
+to pin benchmark membership. The [dataset card](data/evaluation/README.md)
+documents the schema and intended use. Capture the development issue text
+once, then reuse the same snapshots for later comparisons:
 
 ```bash
 python -m app.evaluate score data/evaluation/psf-requests.csv \
@@ -513,6 +560,119 @@ Git to keep complete issue bodies out of the repository.
 
 These curated development results provide a comparison point for future
 models.
+
+### Compare a trained issue classifier
+
+The first trained baseline uses word TF-IDF and logistic regression. It was
+trained locally on 594 public issues from VS Code, JupyterLab, Sphinx, and
+HTTPX. Those repositories are outside the published benchmark. GitHub labels
+provided weak supervision for 160 bugs, 160 questions, 160 feature requests,
+and 114 documentation issues mapped to Other. The model uses titles and
+descriptions at inference time.
+
+Both methods received the same frozen issue text, with GitHub labels
+excluded, on the published 40-issue category test split.
+
+| Method | Macro F1 | Accuracy | Bug recall |
+| --- | ---: | ---: | ---: |
+| Text rules | 74.5% | 30 / 40 | 9 / 10 |
+| Trained classifier | 78.8% | 32 / 40 | 4 / 10 |
+
+The trained classifier correctly predicted all 10 feature requests and all
+10 Other cases on this sample. It misclassified six bugs as questions.
+The application continues to use the rules for live triage. Use separate
+development data to improve the bug/question distinction and a fresh test set
+to assess that revision.
+
+From the project root with the virtual environment active:
+
+```bash
+python -m pip install -r requirements-training.txt
+python -m app.train_classifier collect .cache/issue-classifier/training.json
+python -m app.train_classifier train .cache/issue-classifier/training.json \
+  .cache/issue-classifier/model-v1
+python -m app.train_classifier compare .cache/issue-classifier/model-v1 \
+  data/evaluation/fresh-holdout-40.csv \
+  --snapshot .cache/issue-classifier/holdout.json \
+  --output .cache/issue-classifier/holdout-results.json
+```
+
+The commands use new output paths. Reuse existing text snapshots to reproduce
+a run, since GitHub issue text and labels can change. Issue bodies, the saved
+model, per-class scores, and per-issue predictions stay in the ignored cache.
+
+#### Bug versus support-question follow-up
+
+Codex reviewed the reports and recorded a rationale for each label in
+[16 curated Poetry examples](data/evaluation/bug-question-curated.csv) and a
+[24-issue holdout](data/evaluation/bug-question-holdout.csv). The holdout has
+four bugs and four support questions each from Textual, Ruff, and Pyright.
+These repositories are outside both models' training data and the earlier
+benchmarks. The labels were fixed before scoring and would benefit from
+independent review.
+
+The revision trained on the original 594 examples plus the 16 curated cases.
+It weighted curated examples six times as much as weakly labeled examples
+and multiplied the balanced Bug class weight by 1.35. All three methods
+could predict any of the four original categories. Macro F1 averages the two
+categories represented in this holdout.
+
+| Method | Bugs caught | Questions correct | Correct overall | Macro F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Text rules | 7 / 12 | 3 / 12 | 10 / 24 | 50.4% |
+| First trained model | 8 / 12 | 6 / 12 | 14 / 24 | 68.6% |
+| Revised model | 9 / 12 | 3 / 12 | 12 / 24 | 56.8% |
+
+The revision caught one additional bug and classified two questions as bugs.
+It also sent more questions to Feature request. The first trained model
+performed better overall on this follow-up. The live app still uses the rules.
+This small, deliberately balanced holdout covers the bug/question distinction.
+The earlier four-category test remains the source for the broader comparison.
+
+```bash
+python -m app.train_classifier train .cache/issue-classifier/training.json \
+  .cache/issue-classifier/model-v2 --curated data/evaluation/bug-question-curated.csv \
+  --curated-snapshot .cache/issue-classifier/bug-question-curated.json
+python -m app.train_classifier compare .cache/issue-classifier/model-v1 \
+  data/evaluation/bug-question-holdout.csv --candidate .cache/issue-classifier/model-v2 \
+  --snapshot .cache/issue-classifier/bug-question-holdout.json \
+  --output .cache/issue-classifier/bug-question-results.json
+```
+
+#### Collect independent issue labels in Argilla
+
+The local workspace **maintainerlens-issue-review** has a 32-issue queue,
+**bug-question-blind-01**, drawn from pre-commit, Black, aiohttp, and mypy.
+GitHub labels were used to find candidates. Argilla shows the captured title
+and description, leaving source labels and model suggestions out of the
+review screen. The cases come from repositories outside the classifier's
+existing training data and both scored classification holdouts.
+
+Ask two reviewers to open the same queue with separate Argilla annotator
+accounts. Each reviewer chooses a category and writes one detail from the
+report that supports it. Ask them to use **Unclear** where the report leaves
+the distinction open and to work independently from the captured text.
+
+Export with the workspace owner's API credentials:
+
+```bash
+source .cache/argilla-local/credentials.env
+python -m app.argilla_issue_review status
+python -m app.argilla_issue_review export \
+  --reviews .cache/issue-classifier/bug-question-blind-01-reviews.csv \
+  --consensus .cache/issue-classifier/bug-question-blind-01-consensus.csv
+```
+
+The consensus CSV includes cases with at least two matching submitted labels
+and excludes disagreements and **Unclear**. The individual review file
+retains the evidence for adjudication. The consensus CSV and its captured
+snapshot can be passed to `app.train_classifier train` with `--curated` and
+`--curated-snapshot`. Use new output paths for each export.
+
+To recreate the Argilla queue, import the existing snapshot with
+`python -m app.argilla_issue_review import .cache/issue-classifier/bug-question-blind-01.json`.
+The `collect` command samples a new snapshot from the then-current public
+issues and should be used with a fresh dataset name.
 
 ### Compare semantic duplicate retrieval
 

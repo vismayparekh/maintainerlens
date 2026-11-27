@@ -1,0 +1,25 @@
+repository,number,title,url,expected_category,duplicate_group,annotation_rationale
+Textualize/textual,6122,`TextArea.placeholder` renders incorrectly if it contains newline characters,https://github.com/Textualize/textual/issues/6122,Bug,,Minimal TextArea example shows a multiline placeholder rendering incorrectly.
+Textualize/textual,5395,TypeError when using testing pilot to check for chained click events,https://github.com/Textualize/textual/issues/5395,Bug,,An existing test helper raises an internal TypeError when asked to chain clicks.
+Textualize/textual,5151,TextArea code editor freezes the app,https://github.com/Textualize/textual/issues/5151,Bug,,Minimal TextArea example freezes the application with non-comment content.
+Textualize/textual,3969,Nesting selectors in a selector list causes a stylesheet error,https://github.com/Textualize/textual/issues/3969,Bug,,A minimal stylesheet reproduces an error with equivalent nested selector syntax.
+Textualize/textual,4028,Ignore CSS styling in `DirectoryTree`,https://github.com/Textualize/textual/issues/4028,Question,,Reporter asks how to inherit styling from a custom tree label under the default CSS.
+Textualize/textual,4015,Empty children at instantiation ,https://github.com/Textualize/textual/issues/4015,Question,,Reporter seeks clarification about the mounting lifecycle and how to access a child.
+Textualize/textual,3961,Does nested CSS have lower specificity?,https://github.com/Textualize/textual/issues/3961,Question,,The central question is how specificity works for nested CSS.
+Textualize/textual,3417,Should messages only post after user interaction?,https://github.com/Textualize/textual/issues/3417,Question,,Reporter asks what event semantics should be documented across widgets.
+astral-sh/ruff,30957,[Panic] unquote_annotation_string panics in Tokens::in_range on complex string annotations (TC010 / TC008),https://github.com/astral-sh/ruff/issues/30957,Bug,,The linter panics on existing valid input.
+astral-sh/ruff,30856,B039 considers `frozendict.fromkeys` mutable,https://github.com/astral-sh/ruff/issues/30856,Bug,,A concrete false positive is demonstrated for an immutable default.
+astral-sh/ruff,30424,[Fix error] FURB181 produces invalid Python when digest() is parenthesized,https://github.com/astral-sh/ruff/issues/30424,Bug,,A supplied example shows an autofix emitting invalid Python.
+astral-sh/ruff,29725,PLW0127 `self-assigning-variable` false positive using `match` patterns,https://github.com/astral-sh/ruff/issues/29725,Bug,,A reproducible lint false positive flags a variable introduced by a match pattern.
+astral-sh/ruff,29670,manylinux_2_39_x86_64 isn't supported,https://github.com/astral-sh/ruff/issues/29670,Question,,The reporter is troubleshooting available wheels and architecture compatibility.
+astral-sh/ruff,29168,Debug Ruff Code,https://github.com/astral-sh/ruff/issues/29168,Question,,Reporter asks how to inspect local variables while debugging Ruff.
+astral-sh/ruff,28913,Current working directory alters check behavior,https://github.com/astral-sh/ruff/issues/28913,Question,,Reporter asks which configuration and working directory govern lint behavior.
+astral-sh/ruff,27982,offtop: repo / docs section for badges,https://github.com/astral-sh/ruff/issues/27982,Question,,Reporter asks where to find the project badges.
+microsoft/pyright,12067,presence of optional TypedDict value is not inferred after unpacking assignment,https://github.com/microsoft/pyright/issues/12067,Bug,,Equivalent assignments produce inconsistent narrowing for an optional key.
+microsoft/pyright,12051,Completion after `super().` omits inherited members once a partial name is typed,https://github.com/microsoft/pyright/issues/12051,Bug,,The completion provider loses inherited members after a partial name is typed.
+microsoft/pyright,12042,Invalid docstring reporting on hover for overloaded function,https://github.com/microsoft/pyright/issues/12042,Bug,,Hover help shows the wrong docstring for a concrete overloaded call.
+microsoft/pyright,11984,maximum call stack size exceeded when accessing a descriptor whose __get__ is decorated by a function defined in the class body,https://github.com/microsoft/pyright/issues/11984,Bug,,A supplied descriptor example causes the checker to abort with a stack overflow.
+microsoft/pyright,10881,Consuming large amount of heap memory,https://github.com/microsoft/pyright/issues/10881,Question,,Reporter seeks help diagnosing memory use in their CI project.
+microsoft/pyright,10053,Django BooleanField default value error,https://github.com/microsoft/pyright/issues/10053,Question,,Reporter is troubleshooting a Django field diagnostic without isolating a checker defect.
+microsoft/pyright,7710,Pyright create var is possiply unbound warning with arrays,https://github.com/microsoft/pyright/issues/7710,Question,,Reporter asks about an unbound-variable diagnostic in their code.
+microsoft/pyright,7045,Go to references,https://github.com/microsoft/pyright/issues/7045,Question,,Reporter is seeking help with reference navigation in their editor integration.

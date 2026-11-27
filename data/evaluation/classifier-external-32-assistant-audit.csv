@@ -1,0 +1,33 @@
+repository,number,url,assistant_category,evidence
+pallets/flask,4037,https://github.com/pallets/flask/issues/4037,Bug,"Nested blueprints specify prefixes, but the reported route includes neither."
+pallets/flask,4295,https://github.com/pallets/flask/issues/4295,Bug,A previously cast exception handler still fails type checking after the release notes suggested the cast could be removed.
+pallets/flask,4297,https://github.com/pallets/flask/issues/4297,Bug,The report describes a regression in type checking when stacked Blueprint error-handler decorators narrow the handler's accepted exception type.
+pallets/flask,4355,https://github.com/pallets/flask/issues/4355,Unclear,"The traceback locates the failure in a gevent socket read, and the report gives no minimal Flask-only reproduction or clear ownership."
+pallets/flask,5817,https://github.com/pallets/flask/issues/5817,Other,The report highlights that Flask's documented ASGI setup can imply request concurrency the author did not observe.
+pallets/flask,5825,https://github.com/pallets/flask/issues/5825,Other,The requested change is to document the additional HTTP 415 case when receiving JSON.
+pallets/flask,5881,https://github.com/pallets/flask/issues/5881,Bug,The reported async view fails during concurrent requests in the provided patched gevent setup.
+pallets/flask,6165,https://github.com/pallets/flask/issues/6165,Other,The author requests documentation of server-side limits after seeing Waitress buffer beyond the Flask setting.
+python/cpython,162513,https://github.com/python/cpython/issues/162513,Feature request,The author proposes a faster comparison path for contiguous byte memoryviews.
+python/cpython,162537,https://github.com/python/cpython/issues/162537,Feature request,The author requests exposing Tcl channel handlers through tkinter for portable event-loop integration.
+python/cpython,162540,https://github.com/python/cpython/issues/162540,Feature request,The issue tracks implementation of the approved None-coalescing operator.
+python/cpython,162601,https://github.com/python/cpython/issues/162601,Other,The request corrects the language reference's description of exception access from a finally clause.
+python/cpython,162602,https://github.com/python/cpython/issues/162602,Other,The request corrects language-reference wording about the length of integer literals in light of the decimal conversion limit.
+python/cpython,162603,https://github.com/python/cpython/issues/162603,Other,The author requests documentation of the error rendering and the SyntaxError.msg attribute.
+python/cpython,162604,https://github.com/python/cpython/issues/162604,Other,The request corrects the reference's wording about NaN comparisons to account for Decimal raising InvalidOperation.
+python/cpython,162635,https://github.com/python/cpython/issues/162635,Feature request,The author proposes setting the frame flag as an internal implementation improvement.
+python/cpython,162637,https://github.com/python/cpython/issues/162637,Feature request,The author proposes changing the build default to the tail-calling interpreter where supported.
+python/cpython,162648,https://github.com/python/cpython/issues/162648,Feature request,The author requests an email.utils helper for extracting a recipient address.
+python/cpython,162705,https://github.com/python/cpython/issues/162705,Feature request,"After measuring high peak memory, the author explores quiescent-state checkpoints to improve free-threaded memory reclamation."
+python/cpython,162738,https://github.com/python/cpython/issues/162738,Bug,The report describes an exception whose context points to itself and includes a reproducer.
+python/cpython,162741,https://github.com/python/cpython/issues/162741,Bug,The same library writes an archive that strict decoding cannot read when the name field splits a UTF-8 character.
+python/cpython,162743,https://github.com/python/cpython/issues/162743,Bug,A precisely shifted timestamp series gives an incorrect correlation with full timestamps.
+python/cpython,162745,https://github.com/python/cpython/issues/162745,Bug,A failed newterm call leaves stale initialization state that the next successful call uses.
+python/cpython,162749,https://github.com/python/cpython/issues/162749,Feature request,The proposed Argument Clinic change eliminates redundant reference counting for integer arguments.
+streamlit/streamlit,11726,https://github.com/streamlit/streamlit/issues/11726,Question,The reporter asks for help regaining deployment access after an account-level 403.
+streamlit/streamlit,13063,https://github.com/streamlit/streamlit/issues/13063,Other,The maintainers are polling users about a possible deprecation.
+streamlit/streamlit,14706,https://github.com/streamlit/streamlit/issues/14706,Unclear,"The reproducer shows old UI elements during a rerun, and the report does not establish whether stale rendering is expected during execution."
+streamlit/streamlit,7735,https://github.com/streamlit/streamlit/issues/7735,Question,The author seeks help with static files returning 404 after enabling static serving.
+streamlit/streamlit,7926,https://github.com/streamlit/streamlit/issues/7926,Unclear,"The report describes a stalled rerun with no code, steps, or environment details to distinguish an application stall from a product defect."
+streamlit/streamlit,8848,https://github.com/streamlit/streamlit/issues/8848,Question,The author seeks help diagnosing a blank page in their own app and supplies app-specific code.
+streamlit/streamlit,8966,https://github.com/streamlit/streamlit/issues/8966,Question,The author needs help installing a compatible protoc and building the source checkout.
+streamlit/streamlit,9364,https://github.com/streamlit/streamlit/issues/9364,Question,The author asks about full-screen rendering and hover support when displaying Matplotlib plots inside Streamlit.
