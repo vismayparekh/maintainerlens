@@ -46,6 +46,14 @@ const replyLoading = ref(false)
 const replySaving = ref(false)
 const replyMessage = ref('')
 const exportError = ref('')
+const publicDemo = ref(false)
+const demoGeneration = ref(false)
+const demoAccessKey = ref('')
+const generationNotice = computed(() => {
+  if (!publicDemo.value) return ''
+  if (!demoGeneration.value) return 'AI generation is currently unavailable in this live demo.'
+  return demoAccessKey.value.trim() ? '' : 'Enter a demo access key above to generate a fresh result.'
+})
 let analysisRequest = null
 let relatedRequest = null
 let replyRequest = null
@@ -95,8 +103,19 @@ function selectInbox(view) {
   if (isStaticDemo) void fetchInbox()
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (isStaticDemo || linkedIssue) void fetchInbox()
+  if (isStaticDemo) return
+  try {
+    const response = await fetch('/api/deployment')
+    if (response.ok) {
+      const settings = await response.json()
+      publicDemo.value = settings.public_demo === true
+      demoGeneration.value = settings.demo_generation === true
+    }
+  } catch {
+    // The API enforces any hosting limits even if status cannot be loaded.
+  }
 })
 
 const selectedIssue = computed(
@@ -165,6 +184,14 @@ function selectIssue(issue) {
   if (selectedIssue.value === issue) return
   selectedNumber.value = issue.number
   clearReview()
+}
+
+function generationHeaders() {
+  const headers = { 'Content-Type': 'application/json' }
+  if (publicDemo.value && demoAccessKey.value.trim()) {
+    headers['X-MaintainerLens-Access-Key'] = demoAccessKey.value.trim()
+  }
+  return headers
 }
 
 async function responseMessage(response) {
@@ -259,7 +286,7 @@ async function fetchRepositoryIssues(repo) {
 
 async function generateAnalysis() {
   const issue = selectedIssue.value
-  if (!issue || issue.security_guidance || analysisRequest) return
+  if (!issue || issue.security_guidance || analysisRequest || generationNotice.value) return
   const request = new AbortController()
   analysisRequest = request
   loadingAnalysis.value = true
@@ -268,7 +295,7 @@ async function generateAnalysis() {
   try {
     const response = await fetch('/api/issues/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: generationHeaders(),
       signal: request.signal,
       body: JSON.stringify({
         title: issue.title,
@@ -324,7 +351,7 @@ async function saveReview() {
 
 async function startReplyTrial(mode) {
   const issue = selectedIssue.value
-  if (!issue || issue.security_guidance || replySaving.value) return
+  if (!issue || issue.security_guidance || replySaving.value || (mode === 'assisted' && generationNotice.value)) return
   clearReplyReview()
   replyTrial.value = {
     id: crypto.randomUUID(),
@@ -342,7 +369,7 @@ async function startReplyTrial(mode) {
   try {
     const response = await fetch('/api/issues/draft-reply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: generationHeaders(),
       signal: request.signal,
       body: JSON.stringify({
         title: issue.title,
@@ -450,7 +477,7 @@ async function downloadReviews(kind) {
         <span class="brand-name">Maintainer<span>Lens</span></span>
       </a>
       <div class="topbar-right">
-        <span class="privacy-indicator"><span class="status-dot"></span> {{ isStaticDemo ? 'Portfolio demo' : 'Local workspace' }}</span>
+        <span class="privacy-indicator"><span class="status-dot"></span> {{ isStaticDemo ? 'Portfolio demo' : publicDemo ? 'Live demo' : 'Local workspace' }}</span>
         <a
           class="topbar-link"
           href="https://github.com/vismayparekh/maintainerlens"
@@ -477,6 +504,11 @@ async function downloadReviews(kind) {
           <span v-else>AI suggestions stay yours to review.<br /><strong>Nothing is posted to GitHub.</strong></span>
         </div>
       </section>
+
+      <label v-if="publicDemo && demoGeneration" class="review-field hosted-access">
+        <span class="field-label">Demo access key</span>
+        <input v-model="demoAccessKey" type="password" autocomplete="off" spellcheck="false" />
+      </label>
 
       <div v-if="!linkedIssue" class="inbox-view-switch filter-row" role="group" aria-label="Inbox view">
         <button class="filter-chip" :class="{ active: inboxView === 'issues' }" :aria-pressed="inboxView === 'issues'" @click="selectInbox('issues')">Issues</button>
@@ -523,7 +555,13 @@ async function downloadReviews(kind) {
         </button>
       </form>
 
-      <PullRequests v-show="isPullRequestsView" ref="pullRequestsView" v-model:loading="loadingPullRequests" />
+      <PullRequests
+        v-show="isPullRequestsView"
+        ref="pullRequestsView"
+        v-model:loading="loadingPullRequests"
+        :generation-notice="generationNotice"
+        :demo-access-key="publicDemo ? demoAccessKey.trim() : ''"
+      />
       <Discussions
         v-if="!linkedIssue"
         v-show="isDiscussionsView"
@@ -775,6 +813,7 @@ async function downloadReviews(kind) {
               </div>
             </template>
             <button
+              v-if="!generationNotice"
               class="button button-secondary analyze-button"
               :disabled="loadingAnalysis"
               @click="generateAnalysis"
@@ -783,9 +822,10 @@ async function downloadReviews(kind) {
               {{ loadingAnalysis ? 'Analyzing issue' : analysis ? 'Regenerate suggestion' : 'Generate AI suggestion' }}
               <span v-if="!loadingAnalysis" aria-hidden="true">✳</span>
             </button>
+            <p v-else class="ai-empty">{{ generationNotice }}</p>
           </article>
 
-          <article v-if="!isStaticDemo && analysis" class="panel review-panel">
+          <article v-if="!isStaticDemo && !publicDemo && analysis" class="panel review-panel">
             <div class="review-heading">
               <div>
                 <p class="eyebrow">YOUR DECISION</p>
@@ -842,6 +882,7 @@ async function downloadReviews(kind) {
             <h3>Maintainer reply</h3>
             <div class="review-actions reply-mode-actions">
               <button
+                v-if="!generationNotice"
                 class="button button-secondary"
                 :disabled="replyLoading || replySaving"
                 @click="startReplyTrial('assisted')"
@@ -869,6 +910,7 @@ async function downloadReviews(kind) {
               </label>
               <div class="review-actions">
                 <button
+                  v-if="!publicDemo"
                   class="button button-primary"
                   :disabled="replySaving || replyTrial.saved || !replyText.trim()"
                   @click="saveReplyReview"
@@ -931,7 +973,7 @@ async function downloadReviews(kind) {
 
       <footer class="app-footer">
         <span>MAINTAINERLENS <i>·</i> {{ isStaticDemo ? 'PORTFOLIO DEMO' : 'AI-ASSISTED, HUMAN-REVIEWED' }}</span>
-        <a v-if="isStaticDemo" class="topbar-link" href="https://github.com/vismayparekh/maintainerlens#run-the-docker-demo" target="_blank" rel="noreferrer">Run the full app ↗</a>
+        <a v-if="isStaticDemo || publicDemo" class="topbar-link" href="https://github.com/vismayparekh/maintainerlens#run-the-docker-demo" target="_blank" rel="noreferrer">{{ isStaticDemo ? 'Run the full app ↗' : 'Run the app locally ↗' }}</a>
         <div v-else class="review-export-actions">
           <button class="text-button" :disabled="downloadingReviews" @click="downloadReviews('triage')">
             Export saved reviews ↓

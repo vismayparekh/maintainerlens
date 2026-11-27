@@ -53,7 +53,39 @@ python tests/smoke_demo.py http://127.0.0.1:7860 --repository psf/requests
 
 GitHub Actions runs the Python tests, builds Vue, and starts the Docker demo on
 pushes and pull requests. The CI smoke test exercises health, built assets,
-and both API routes without GitHub or Hugging Face credentials.
+repository API routing, and public hosting restrictions without GitHub or
+Hugging Face credentials.
+
+## Host the live demo on Render
+
+The [Render blueprint](render.yaml) builds the existing Dockerfile as one
+Free web service with `/api/health` as its health check. Connect this repository
+in the Render dashboard and create a Blueprint from the branch containing
+`render.yaml`. Use a workspace without a payment method for a preview that
+suspends when included usage runs out. The service can take about a minute
+to wake after inactivity. [Render Free limits](https://render.com/docs/free)
+
+Hosted mode lets visitors browse current public issues and pull requests
+using unauthenticated GitHub REST requests. Add a Discussions read token
+as `GITHUB_TOKEN` in Render's environment settings to enable Discussions.
+Hosted review storage and export are disabled. The local Docker run keeps
+them available.
+
+To enable fresh AI generation, add an inference credential as `HF_TOKEN`
+and optionally set `HF_MODEL` in the Render environment. Inference usage
+comes from the Hugging Face account. Render generates a
+`MAINTAINERLENS_DEMO_ACCESS_KEY` for the hosted app. Share that access key only
+with demo participants, who can enter it in the dashboard. Keep provider
+credentials in Render's environment settings. API clients pass the demo
+access key in the `X-MaintainerLens-Access-Key` request header on generation
+requests.
+
+For a deployment created without a provider key, run the credential-free
+smoke test against its HTTPS URL:
+
+```bash
+python tests/smoke_demo.py https://<service>.onrender.com --public-demo
+```
 
 ## Run locally
 

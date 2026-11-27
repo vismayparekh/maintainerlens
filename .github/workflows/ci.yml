@@ -45,9 +45,16 @@ jobs:
         run: |
           docker run -d --name maintainerlens-ci -p 127.0.0.1:7860:7860 maintainerlens-ci
           python tests/smoke_demo.py http://127.0.0.1:7860
+      - name: Smoke-test public hosting mode
+        run: |
+          docker run -d --name maintainerlens-public-ci -p 127.0.0.1:7861:7860 \
+            -e MAINTAINERLENS_PUBLIC_DEMO=1 maintainerlens-ci
+          python tests/smoke_demo.py http://127.0.0.1:7861 --public-demo
       - name: Show container logs on failure
         if: failure()
-        run: docker logs --tail 100 maintainerlens-ci || true
+        run: |
+          docker logs --tail 100 maintainerlens-ci || true
+          docker logs --tail 100 maintainerlens-public-ci || true
       - name: Remove smoke-test container
         if: always()
-        run: docker rm -f maintainerlens-ci || true
+        run: docker rm -f maintainerlens-ci maintainerlens-public-ci || true

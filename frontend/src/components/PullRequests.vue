@@ -5,6 +5,10 @@ import { computed, ref } from 'vue'
 import { isStaticDemo, loadDemoRepository } from '../demo'
 
 const loading = defineModel('loading', { type: Boolean, default: false })
+const props = defineProps({
+  generationNotice: { type: String, default: '' },
+  demoAccessKey: { type: String, default: '' },
+})
 const pulls = ref([])
 const loadedRepository = ref('')
 const selected = ref(null)
@@ -109,14 +113,16 @@ async function selectPull(pull) {
 }
 
 async function generateBrief() {
-  if (!details.value || loadingBrief.value) return
+  if (!details.value || loadingBrief.value || props.generationNotice) return
   const request = new AbortController()
   briefRequest = request
   loadingBrief.value = true
   briefError.value = ''
   try {
     const result = await requestJson(pullUrl(activePull.value.number, '/analyze'), {
-      method: 'POST', signal: request.signal,
+      method: 'POST',
+      signal: request.signal,
+      headers: props.demoAccessKey ? { 'X-MaintainerLens-Access-Key': props.demoAccessKey } : {},
     })
     if (briefRequest === request) brief.value = result
   } catch (error) {
@@ -225,9 +231,10 @@ defineExpose({ loadPullRequests })
               <li v-for="(step, index) in brief.checklist" :key="index">{{ step }}</li>
             </ul>
           </div>
-          <button v-if="!isStaticDemo" class="button button-secondary analyze-button" :disabled="loadingBrief" @click="generateBrief">
+          <button v-if="!isStaticDemo && !generationNotice" class="button button-secondary analyze-button" :disabled="loadingBrief" @click="generateBrief">
             {{ loadingBrief ? 'Generating review brief…' : brief ? 'Regenerate review brief' : 'Generate review brief' }}
           </button>
+          <p v-else-if="generationNotice" class="ai-empty">{{ generationNotice }}</p>
         </article>
       </div>
     </section>

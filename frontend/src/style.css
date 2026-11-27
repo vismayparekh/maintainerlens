@@ -281,6 +281,21 @@ a {
   color: #a6b0bd;
 }
 
+.hosted-access {
+  width: min(320px, 100%);
+  margin: 0 0 18px;
+}
+
+.hosted-access input {
+  width: 100%;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid #e1e6eb;
+  border-radius: 9px;
+  color: var(--ink);
+  background: #fbfcfd;
+}
+
 .limit-field select,
 .review-field select {
   width: 100%;

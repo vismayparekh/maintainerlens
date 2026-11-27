@@ -9,10 +9,11 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 import requests
-from fastapi import FastAPI, HTTPException, Path, Query
+from fastapi import Depends, FastAPI, HTTPException, Path, Query, Request
 from fastapi.responses import FileResponse, Response
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator
 
+from app.deployment import demo_generation_configured, public_demo_enabled, require_generation_access, require_local_reviews
 from app.github_discussions import (
     MAX_DISCUSSIONS,
     DiscussionDetails,
@@ -216,6 +217,12 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/deployment")
+def deployment(response: Response) -> dict[str, bool]:
+    response.headers["Cache-Control"] = "no-store"
+    return {"public_demo": public_demo_enabled(), "demo_generation": demo_generation_configured() and public_demo_enabled()}
+
+
 def _read_discussions(
     fetch: Callable[[str, int], DiscussionResult], repository: str, value: int,
 ) -> DiscussionResult:
@@ -275,7 +282,7 @@ def read_pull_request(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@app.post("/api/pull-requests/{number}/analyze", response_model=PullRequestAnalysis)
+@app.post("/api/pull-requests/{number}/analyze", response_model=PullRequestAnalysis, dependencies=[Depends(require_generation_access)])
 def analyze_repository_pull_request(
     number: int = Path(ge=1), repository: str = Query(min_length=1),
 ) -> PullRequestAnalysis:
@@ -400,10 +407,11 @@ def find_background_related_issues(lookup_id: str) -> dict[int, list[SimilarIssu
 
 @app.post("/api/issues/analyze", response_model=AnalyzeIssueResponse)
 def analyze_repository_issue(
-    request: AnalyzeIssueRequest,
+    request: AnalyzeIssueRequest, http_request: Request,
 ) -> AnalyzeIssueResponse:
     if security_reason(request.title, request.body):
         raise HTTPException(status_code=422, detail="Use the repository’s private security reporting instructions for this issue.")
+    require_generation_access(http_request)
     try:
         analysis = analyze_issue(request.title, request.body)
     except IssueAnalysisNotConfiguredError as exc:
@@ -419,7 +427,7 @@ def analyze_repository_issue(
     )
 
 
-@app.post("/api/reviews", response_model=ReviewResponse)
+@app.post("/api/reviews", response_model=ReviewResponse, dependencies=[Depends(require_local_reviews)])
 def save_issue_review(request: ReviewRequest) -> ReviewResponse:
     issue = GitHubIssue(
         number=request.issue_number,
@@ -445,9 +453,10 @@ def save_issue_review(request: ReviewRequest) -> ReviewResponse:
 
 
 @app.post("/api/issues/draft-reply", response_model=ReplyDraftResponse)
-def draft_repository_reply(request: ReplyDraftRequest) -> ReplyDraftResponse:
+def draft_repository_reply(request: ReplyDraftRequest, http_request: Request) -> ReplyDraftResponse:
     if security_reason(request.title, request.body):
         return ReplyDraftResponse(reply=private_reporting_reply(), checklist=[])
+    require_generation_access(http_request)
     related = [issue for issue in request.related_issues if not security_reason(issue.issue_title, "")]
     try:
         draft = draft_issue_reply(
@@ -471,7 +480,7 @@ def draft_repository_reply(request: ReplyDraftRequest) -> ReplyDraftResponse:
     return ReplyDraftResponse(reply=reply, checklist=draft.checklist)
 
 
-@app.post("/api/reply-reviews", response_model=ReviewResponse)
+@app.post("/api/reply-reviews", response_model=ReviewResponse, dependencies=[Depends(require_local_reviews)])
 def save_reply_review(request: ReplyReviewRequest) -> ReviewResponse:
     issue = GitHubIssue(request.issue_number, request.issue_title, "", (), str(request.issue_url))
     try:
@@ -481,7 +490,7 @@ def save_reply_review(request: ReplyReviewRequest) -> ReviewResponse:
     return ReviewResponse(message="Reply review saved locally.")
 
 
-@app.get("/api/reply-reviews/export")
+@app.get("/api/reply-reviews/export", dependencies=[Depends(require_local_reviews)])
 def download_reply_reviews() -> Response:
     try:
         export = export_reply_trials()
@@ -494,7 +503,7 @@ def download_reply_reviews() -> Response:
     )
 
 
-@app.get("/api/reviews/export")
+@app.get("/api/reviews/export", dependencies=[Depends(require_local_reviews)])
 def download_reviews() -> FileResponse:
     try:
         path = export_reviews_csv()
