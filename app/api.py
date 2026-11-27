@@ -1,9 +1,10 @@
 import logging
 import os
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock
-from typing import Literal
+from typing import Literal, TypeVar
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -12,6 +13,16 @@ from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.responses import FileResponse, Response
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator
 
+from app.github_discussions import (
+    MAX_DISCUSSIONS,
+    DiscussionDetails,
+    DiscussionList,
+    DiscussionsAccessError,
+    DiscussionsError,
+    DiscussionsNotFound,
+    fetch_discussion,
+    fetch_discussions,
+)
 from app.github_client import (
     MAX_ISSUES,
     MAX_PULL_REQUESTS,
@@ -19,10 +30,14 @@ from app.github_client import (
     GitHubPullRequest,
     PullRequestDetails,
     fetch_closed_issues,
+    fetch_issue_by_number,
     fetch_issues,
     fetch_pull_request_details,
     fetch_pull_requests,
+    fetch_repository_labels,
 )
+from app.issue_severity import SeveritySuggestion, suggest_severity
+from app.label_suggestions import LabelSuggestion, suggest_labels
 from app.llm_client import (
     IssueAnalysisError,
     IssueAnalysisNotConfiguredError,
@@ -34,9 +49,11 @@ from app.llm_client import (
 from app.processor import SimilarityMatch, classify_issue, find_similar_issues
 from app.review_store import ReviewStoreError, export_reviews_csv, save_review
 from app.reply_reviews import ReplyTrial, export_reply_trials, save_reply_trial
+from app.security_guidance import SecurityGuidance, private_reporting_reply, security_guidance, security_reason
 from app.semantic_retrieval import EmbeddingCache, find_semantic_fallbacks
 
 IssueCategory = Literal["Bug", "Question", "Feature request", "Other"]
+DiscussionResult = TypeVar("DiscussionResult", DiscussionList, DiscussionDetails)
 
 app = FastAPI(title="MaintainerLens API", version="1.0.0")
 logger = logging.getLogger(__name__)
@@ -73,6 +90,9 @@ class IssueResponse(BaseModel):
     url: str
     category: IssueCategory
     similar_issues: list[SimilarIssueResponse]
+    severity: SeveritySuggestion
+    suggested_labels: list[LabelSuggestion] = Field(default_factory=list)
+    security_guidance: SecurityGuidance | None = None
 
 
 class IssueListResponse(BaseModel):
@@ -80,6 +100,7 @@ class IssueListResponse(BaseModel):
     issues: list[IssueResponse]
     historical_issue_count: int
     related_lookup_id: str | None = None
+    label_suggestions_status: Literal["available", "unavailable"] | None = None
 
 
 class PullRequestListResponse(BaseModel):
@@ -155,15 +176,21 @@ def _issue_response(
     issue: GitHubIssue,
     similar_issues: list[SimilarityMatch],
     open_issue_numbers: set[int],
+    repository_labels: list[str] | None = None,
 ) -> IssueResponse:
+    category = classify_issue(issue)
+    guidance = security_guidance(issue)
     return IssueResponse(
         number=issue.number,
         title=issue.title,
         body=issue.body,
         labels=list(issue.labels),
         url=issue.url,
-        category=classify_issue(issue),
+        category=category,
         similar_issues=[_similar_issue_response(match, open_issue_numbers) for match in similar_issues],
+        severity=suggest_severity(issue, category),
+        suggested_labels=suggest_labels(issue, category, repository_labels) if repository_labels and not guidance else [],
+        security_guidance=guidance,
     )
 
 
@@ -187,6 +214,36 @@ def _similar_issue_response(
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+def _read_discussions(
+    fetch: Callable[[str, int], DiscussionResult], repository: str, value: int,
+) -> DiscussionResult:
+    try:
+        return fetch(repository, value)
+    except DiscussionsNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DiscussionsAccessError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (requests.RequestException, DiscussionsError) as exc:
+        raise HTTPException(status_code=502, detail="Could not load Discussions from GitHub.") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/discussions", response_model=DiscussionList)
+def list_repository_discussions(
+    repository: str = Query(min_length=1),
+    limit: int = Query(default=10, ge=1, le=MAX_DISCUSSIONS),
+) -> DiscussionList:
+    return _read_discussions(fetch_discussions, repository, limit)
+
+
+@app.get("/api/discussions/{number}", response_model=DiscussionDetails)
+def read_repository_discussion(
+    number: int = Path(ge=1, le=2_147_483_647), repository: str = Query(min_length=1),
+) -> DiscussionDetails:
+    return _read_discussions(fetch_discussion, repository, number)
 
 
 @app.get("/api/pull-requests", response_model=PullRequestListResponse)
@@ -235,6 +292,7 @@ def analyze_repository_pull_request(
 def list_repository_issues(
     repository: str = Query(min_length=1),
     limit: int = Query(default=10, ge=1, le=MAX_ISSUES),
+    include_label_suggestions: bool = False,
 ) -> IssueListResponse:
     try:
         open_issues = fetch_issues(repository, limit)
@@ -254,17 +312,18 @@ def list_repository_issues(
         ) from exc
 
     open_issue_numbers = {issue.number for issue in open_issues}
-    candidates = list(open_issues)
+    candidates = [issue for issue in open_issues if not security_reason(issue.title, issue.body, issue.labels)]
+    comparable_open_numbers = {issue.number for issue in candidates}
     seen_numbers = set(open_issue_numbers)
     for issue in closed_issues:
-        if issue.number not in seen_numbers:
+        if issue.number not in seen_numbers and not security_reason(issue.title, issue.body, issue.labels):
             candidates.append(issue)
             seen_numbers.add(issue.number)
 
     matches_by_number = find_similar_issues(candidates)
     lookup_id = None
     if os.getenv("MAINTAINERLENS_SEMANTIC_SEARCH") == "1" and len(candidates) > 1:
-        query_numbers = {issue.number for issue in open_issues if not matches_by_number[issue.number]}
+        query_numbers = {number for number in comparable_open_numbers if not matches_by_number[number]}
         if query_numbers:
             lookup_id = uuid4().hex
             with _related_batches_lock:
@@ -273,19 +332,47 @@ def list_repository_issues(
                 )
                 if len(_related_batches) > _MAX_RELATED_BATCHES:
                     _related_batches.popitem(last=False)
+    label_status = None
+    repository_labels = None
+    if include_label_suggestions:
+        try:
+            repository_labels = fetch_repository_labels(repository)
+            label_status = "available"
+        except (ValueError, requests.RequestException):
+            logger.info("GitHub repository labels could not be loaded.")
+            label_status = "unavailable"
     return IssueListResponse(
         repository=repository,
         issues=[
             _issue_response(
                 issue,
-                matches_by_number[issue.number],
+                matches_by_number.get(issue.number, []),
                 open_issue_numbers,
+                repository_labels,
             )
             for issue in open_issues
         ],
-        historical_issue_count=len(candidates) - len(open_issues),
+        historical_issue_count=len(candidates) - len(comparable_open_numbers),
         related_lookup_id=lookup_id,
+        label_suggestions_status=label_status,
     )
+
+
+@app.get("/api/issues/{number}", response_model=IssueResponse)
+def read_issue(
+    number: int = Path(ge=1), repository: str = Query(min_length=1)
+) -> IssueResponse:
+    try:
+        issue = fetch_issue_by_number(repository, number)
+    except requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Issue not found on GitHub.") from exc
+        raise HTTPException(status_code=502, detail="Could not load the issue from GitHub.") from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail="Could not load the issue from GitHub.") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _issue_response(issue, [], set())
 
 
 @app.get("/api/issues/related/{lookup_id}", response_model=dict[int, list[SimilarIssueResponse]])
@@ -315,6 +402,8 @@ def find_background_related_issues(lookup_id: str) -> dict[int, list[SimilarIssu
 def analyze_repository_issue(
     request: AnalyzeIssueRequest,
 ) -> AnalyzeIssueResponse:
+    if security_reason(request.title, request.body):
+        raise HTTPException(status_code=422, detail="Use the repository’s private security reporting instructions for this issue.")
     try:
         analysis = analyze_issue(request.title, request.body)
     except IssueAnalysisNotConfiguredError as exc:
@@ -357,18 +446,21 @@ def save_issue_review(request: ReviewRequest) -> ReviewResponse:
 
 @app.post("/api/issues/draft-reply", response_model=ReplyDraftResponse)
 def draft_repository_reply(request: ReplyDraftRequest) -> ReplyDraftResponse:
+    if security_reason(request.title, request.body):
+        return ReplyDraftResponse(reply=private_reporting_reply(), checklist=[])
+    related = [issue for issue in request.related_issues if not security_reason(issue.issue_title, "")]
     try:
         draft = draft_issue_reply(
             request.title,
             request.body,
-            [(issue.issue_number, issue.issue_title) for issue in request.related_issues],
+            [(issue.issue_number, issue.issue_title) for issue in related],
         )
     except IssueAnalysisNotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except IssueAnalysisError:
         raise HTTPException(status_code=502, detail="The AI reply could not be generated. Please retry.") from None
 
-    known_links = {issue.issue_number: issue.issue_url for issue in request.related_issues}
+    known_links = {issue.issue_number: issue.issue_url for issue in related}
     links = [
         f"[#{number}]({known_links[number]})"
         for number in dict.fromkeys(draft.related_issue_numbers) if number in known_links

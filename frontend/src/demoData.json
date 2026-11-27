@@ -6,8 +6,18 @@
         "title": "KBinsDiscretizer creates wrong bins",
         "body": "The reporter used quantile binning on data with many repeated values. They expected three occupied bins, but a warning reported that a very narrow bin was removed and the output used fewer bins.",
         "category": "Bug",
-        "labels": [],
+        "labels": ["API", "Needs Decision", "module:preprocessing"],
         "url": "https://github.com/scikit-learn/scikit-learn/issues/19416",
+        "severity": {
+          "level": "needs_review",
+          "reason": "Confirm which workflow is affected and how much it is blocked."
+        },
+        "suggested_labels": [
+          {
+            "name": "Bug",
+            "reason": "Matches the suggested bug category."
+          }
+        ],
         "similar_issues": [
           {
             "number": 19433,
@@ -44,6 +54,50 @@
           "summary": "Repeated values can lead to fewer quantile bins than requested in the reporter’s example.",
           "rationale": "The report includes a reproducer and a concrete difference between expected and observed output."
         }
+      },
+      {
+        "number": 35523,
+        "title": "CalibratedClassifierCV loses groups with ensemble=False and metadata routing enabled",
+        "body": "The reporter supplied a synthetic example where grouped cross-validation fails during non-ensemble calibration. The report says the call raises an error even when group assignments are provided.",
+        "category": "Bug",
+        "labels": ["Bug", "Metadata Routing"],
+        "url": "https://github.com/scikit-learn/scikit-learn/issues/35523",
+        "similar_issues": [],
+        "severity": {
+          "level": "moderate",
+          "reason": "The report describes a concrete failure in an affected workflow."
+        },
+        "suggested_labels": [
+          {
+            "name": "module:ensemble",
+            "reason": "The issue title mentions ensemble."
+          }
+        ],
+        "example_summary": {
+          "summary": "A grouped calibration example fails with metadata routing and ensemble mode disabled.",
+          "rationale": "The report identifies the affected settings and describes the resulting failure."
+        }
+      }
+    ],
+    "discussions": [
+      {
+        "number": 34240,
+        "title": "Gower's Distance",
+        "url": "https://github.com/scikit-learn/scikit-learn/discussions/34240",
+        "category": "Q&A",
+        "author": "Daniel15568",
+        "updated_at": "2026-08-10T10:13:45Z",
+        "answerable": true,
+        "answered": true,
+        "comment_count": 4,
+        "labels": [],
+        "body": "The author asks whether scikit-learn provides Gower distance and whether agglomerative clustering supplies it.",
+        "answer": {
+          "author": "saitejabandaru-in",
+          "url": "https://github.com/scikit-learn/scikit-learn/discussions/34240#discussioncomment-17427138",
+          "body": "The accepted response suggests computing a distance matrix separately and using a clustering algorithm that accepts precomputed distances."
+        },
+        "recent_comments": []
       }
     ],
     "pullRequests": [
@@ -185,6 +239,23 @@
     ]
   },
   "pandas-dev/pandas": {
+    "discussions": [
+      {
+        "number": 71944,
+        "title": "How should pandas-stubs balance typing precision, overload complexity, and runtime behavior for MultiIndex indexing?",
+        "url": "https://github.com/pandas-dev/pandas/discussions/71944",
+        "category": "Q&A",
+        "author": "Prem-gosavi45",
+        "updated_at": "2026-11-11T16:23:24Z",
+        "answerable": true,
+        "answered": false,
+        "comment_count": 3,
+        "labels": [],
+        "body": "The author asks how to describe MultiIndex selection in pandas-stubs when full keys, partial keys, and slices can lead to different return types.",
+        "answer": null,
+        "recent_comments": []
+      }
+    ],
     "issues": [
       {
         "number": 72276,

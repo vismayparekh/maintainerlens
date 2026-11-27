@@ -2,16 +2,25 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { computed, onMounted, ref } from 'vue'
+import Discussions from './components/Discussions.vue'
+import IssueSeverity from './components/IssueSeverity.vue'
 import PullRequests from './components/PullRequests.vue'
+import SecurityReport from './components/SecurityReport.vue'
 import { demoRepositories, isStaticDemo, loadDemoRepository } from './demo'
 
 const categories = ['Bug', 'Question', 'Feature request', 'Other']
 const filters = ['All', ...categories]
-const repository = ref('scikit-learn/scikit-learn')
+const linkParams = new URLSearchParams(window.location.search)
+const linkedRepository = linkParams.get('repository')?.trim()
+const linkedNumber = linkParams.get('issue')
+const linkedIssue = !isStaticDemo && linkedRepository && /^[1-9]\d*$/.test(linkedNumber ?? '')
+const repository = ref(linkedIssue ? linkedRepository : 'scikit-learn/scikit-learn')
 const issueLimit = ref(10)
 const inboxView = ref('issues')
 const pullRequestsView = ref(null)
+const discussionsView = ref(null)
 const loadingPullRequests = ref(false)
+const loadingDiscussions = ref(false)
 const issues = ref([])
 const loadedIssueRepository = ref('')
 const selectedNumber = ref(null)
@@ -19,6 +28,7 @@ const categoryFilter = ref('All')
 const searchQuery = ref('')
 const loadingIssues = ref(false)
 const relatedStatus = ref('idle')
+const labelSuggestionsStatus = ref(null)
 const loadingAnalysis = ref(false)
 const savingReview = ref(false)
 const downloadingReviews = ref(false)
@@ -41,11 +51,40 @@ let relatedRequest = null
 let replyRequest = null
 
 const isPullRequestsView = computed(() => inboxView.value === 'pull-requests')
-const loadingInbox = computed(() => isPullRequestsView.value ? loadingPullRequests.value : loadingIssues.value)
+const isDiscussionsView = computed(() => inboxView.value === 'discussions')
+const loadingInbox = computed(() => ({
+  issues: loadingIssues.value,
+  'pull-requests': loadingPullRequests.value,
+  discussions: loadingDiscussions.value,
+})[inboxView.value])
+const inboxCopy = {
+  issues: {
+    title: 'Make the next issue easier to triage.',
+    description: 'Review incoming reports, surface related issues, and prepare a human-reviewed summary in one place.',
+    limit: 'Open issues',
+    items: 'issues',
+  },
+  'pull-requests': {
+    title: 'Get oriented before reviewing a pull request.',
+    description: 'See which files changed, find issue references, and prepare a review checklist.',
+    limit: 'Open pull requests',
+    items: 'pull requests',
+  },
+  discussions: {
+    title: 'Catch up on repository discussions.',
+    description: 'Browse recent threads, read accepted answers, and open the conversation on GitHub.',
+    limit: 'Recent discussions',
+    items: 'discussions',
+  },
+}
+const activeInbox = computed(() => inboxCopy[inboxView.value])
 
 function fetchInbox() {
   if (isPullRequestsView.value) {
     return pullRequestsView.value?.loadPullRequests(repository.value, issueLimit.value)
+  }
+  if (isDiscussionsView.value) {
+    return discussionsView.value?.loadDiscussions(repository.value, issueLimit.value)
   }
   return fetchIssues()
 }
@@ -57,7 +96,7 @@ function selectInbox(view) {
 }
 
 onMounted(() => {
-  if (isStaticDemo) void fetchInbox()
+  if (isStaticDemo || linkedIssue) void fetchInbox()
 })
 
 const selectedIssue = computed(
@@ -173,6 +212,7 @@ async function fetchIssues() {
   relatedRequest?.abort()
   relatedRequest = null
   relatedStatus.value = 'idle'
+  labelSuggestionsStatus.value = null
   issues.value = []
   selectedNumber.value = null
   clearReview()
@@ -183,9 +223,12 @@ async function fetchIssues() {
       : await fetchRepositoryIssues(repo)
     loadedIssueRepository.value = repo
     issues.value = result.issues
+    labelSuggestionsStatus.value = result.label_suggestions_status ?? null
     selectedNumber.value = result.issues[0]?.number ?? null
     statusMessage.value = isStaticDemo
       ? `${result.issues.length} curated issue examples from ${repo}.`
+      : linkedIssue
+      ? `Loaded issue #${linkedNumber} from ${repo}.`
       : result.issues.length
       ? `Loaded ${result.issues.length} open issues and compared against ${result.historical_issue_count} recently closed issues.`
       : 'No open issues were found for this repository.'
@@ -198,7 +241,17 @@ async function fetchIssues() {
 }
 
 async function fetchRepositoryIssues(repo) {
-  const params = new URLSearchParams({ repository: repo, limit: String(issueLimit.value) })
+  if (linkedIssue) {
+    const params = new URLSearchParams({ repository: repo })
+    const response = await fetch(`/api/issues/${linkedNumber}?${params}`)
+    if (!response.ok) throw new Error(await responseMessage(response))
+    return { issues: [await response.json()] }
+  }
+  const params = new URLSearchParams({
+    repository: repo,
+    limit: String(issueLimit.value),
+    include_label_suggestions: 'true',
+  })
   const response = await fetch(`/api/issues?${params}`)
   if (!response.ok) throw new Error(await responseMessage(response))
   return response.json()
@@ -206,7 +259,7 @@ async function fetchRepositoryIssues(repo) {
 
 async function generateAnalysis() {
   const issue = selectedIssue.value
-  if (!issue || analysisRequest) return
+  if (!issue || issue.security_guidance || analysisRequest) return
   const request = new AbortController()
   analysisRequest = request
   loadingAnalysis.value = true
@@ -271,7 +324,7 @@ async function saveReview() {
 
 async function startReplyTrial(mode) {
   const issue = selectedIssue.value
-  if (!issue || replySaving.value) return
+  if (!issue || issue.security_guidance || replySaving.value) return
   clearReplyReview()
   replyTrial.value = {
     id: crypto.randomUUID(),
@@ -412,15 +465,11 @@ async function downloadReviews(kind) {
         <div>
           <p class="eyebrow">GITHUB TRIAGE WORKSPACE</p>
           <h1 v-if="isStaticDemo">Explore a GitHub maintainer’s workflow.</h1>
-          <h1 v-else>{{ isPullRequestsView ? 'Get oriented before reviewing a pull request.' : 'Make the next issue easier to triage.' }}</h1>
+          <h1 v-else>{{ activeInbox.title }}</h1>
           <p v-if="isStaticDemo" class="intro-copy">
-            Browse real issues and pull requests from scikit-learn and pandas, then see how MaintainerLens performed in evaluation.
+            Browse real issues, pull requests, and discussions from scikit-learn and pandas, then see how MaintainerLens performed in evaluation.
           </p>
-          <p v-else class="intro-copy">
-            {{ isPullRequestsView
-              ? 'See which files changed, find issue references, and prepare a review checklist.'
-              : 'Review incoming reports, surface related issues, and prepare a human-reviewed summary in one place.' }}
-          </p>
+          <p v-else class="intro-copy">{{ activeInbox.description }}</p>
         </div>
         <div class="intro-note">
           <span class="note-icon">✳</span>
@@ -429,9 +478,10 @@ async function downloadReviews(kind) {
         </div>
       </section>
 
-      <div class="inbox-view-switch filter-row" role="group" aria-label="Inbox view">
-        <button class="filter-chip" :class="{ active: !isPullRequestsView }" :aria-pressed="!isPullRequestsView" @click="selectInbox('issues')">Issues</button>
+      <div v-if="!linkedIssue" class="inbox-view-switch filter-row" role="group" aria-label="Inbox view">
+        <button class="filter-chip" :class="{ active: inboxView === 'issues' }" :aria-pressed="inboxView === 'issues'" @click="selectInbox('issues')">Issues</button>
         <button class="filter-chip" :class="{ active: isPullRequestsView }" :aria-pressed="isPullRequestsView" @click="selectInbox('pull-requests')">Pull requests</button>
+        <button class="filter-chip" :class="{ active: isDiscussionsView }" :aria-pressed="isDiscussionsView" @click="selectInbox('discussions')">Discussions</button>
         <a v-if="isStaticDemo" class="filter-chip demo-anchor" href="#benchmarks">Benchmarks</a>
       </div>
 
@@ -443,7 +493,7 @@ async function downloadReviews(kind) {
           </select>
         </label>
       </div>
-      <form v-else class="repository-bar" @submit.prevent="fetchInbox">
+      <form v-else-if="!linkedIssue" class="repository-bar" @submit.prevent="fetchInbox">
         <label class="repo-field">
           <span class="field-label">GitHub repository</span>
           <span class="repo-input-wrap">
@@ -460,22 +510,28 @@ async function downloadReviews(kind) {
           </span>
         </label>
         <label class="limit-field">
-          <span class="field-label">{{ isPullRequestsView ? 'Open pull requests' : 'Open issues' }}</span>
+          <span class="field-label">{{ activeInbox.limit }}</span>
           <select v-model.number="issueLimit" :disabled="loadingInbox">
-            <option :value="10">10 {{ isPullRequestsView ? 'pull requests' : 'issues' }}</option>
-            <option :value="20">20 {{ isPullRequestsView ? 'pull requests' : 'issues' }}</option>
+            <option :value="10">10 {{ activeInbox.items }}</option>
+            <option :value="20">20 {{ activeInbox.items }}</option>
           </select>
         </label>
         <button class="button button-primary fetch-button" :disabled="loadingInbox">
           <span v-if="loadingInbox" class="spinner"></span>
-          <span>{{ loadingInbox ? 'Loading…' : isPullRequestsView ? 'Fetch pull requests' : 'Fetch issues' }}</span>
+          <span>{{ loadingInbox ? 'Loading…' : 'Fetch ' + activeInbox.items }}</span>
           <span v-if="!loadingInbox" aria-hidden="true">→</span>
         </button>
       </form>
 
       <PullRequests v-show="isPullRequestsView" ref="pullRequestsView" v-model:loading="loadingPullRequests" />
+      <Discussions
+        v-if="!linkedIssue"
+        v-show="isDiscussionsView"
+        ref="discussionsView"
+        v-model:loading="loadingDiscussions"
+      />
 
-      <template v-if="!isPullRequestsView">
+      <template v-if="inboxView === 'issues'">
       <div v-if="pageError" class="notice notice-error" role="alert">
         <span class="notice-icon">!</span>
         <span>{{ pageError }}</span>
@@ -483,8 +539,9 @@ async function downloadReviews(kind) {
       <div v-else-if="statusMessage" class="load-status" role="status">
         <span class="status-dot"></span>{{ statusMessage }}
       </div>
+      <p v-else-if="linkedIssue && loadingIssues" class="load-status" role="status">Loading issue…</p>
 
-      <section v-if="issues.length && !isStaticDemo" class="metrics-row" aria-label="Issue summary">
+      <section v-if="issues.length && !isStaticDemo && !linkedIssue" class="metrics-row" aria-label="Issue summary">
         <div class="metric-card">
           <span class="metric-label">OPEN ISSUES</span>
           <strong>{{ issues.length }}</strong>
@@ -507,8 +564,8 @@ async function downloadReviews(kind) {
         </div>
       </section>
 
-      <section v-if="issues.length" class="triage-layout">
-        <aside class="issue-panel panel">
+      <section v-if="issues.length" :class="{ 'triage-layout': !linkedIssue }">
+        <aside v-if="!linkedIssue" class="issue-panel panel">
           <div class="panel-heading">
             <div>
               <p class="eyebrow">INBOX</p>
@@ -557,7 +614,8 @@ async function downloadReviews(kind) {
               <span class="issue-row-title">{{ issue.title }}</span>
               <span class="issue-row-meta">
                 <span>{{ issue.labels.slice(0, 2).join(' · ') || (isStaticDemo ? 'GitHub issue' : 'Unlabeled') }}</span>
-                <span v-if="issue.similar_issues.length" class="match-count">
+                <span v-if="issue.security_guidance" class="match-count">Security review</span>
+                <span v-else-if="issue.similar_issues.length" class="match-count">
                   {{ issue.similar_issues.length }} related
                 </span>
               </span>
@@ -579,7 +637,7 @@ async function downloadReviews(kind) {
               <a :href="selectedIssue.url" target="_blank" rel="noreferrer">
                 {{ loadedIssueRepository }} <span>›</span> #{{ selectedIssue.number }} ↗
               </a>
-              <span class="open-label"><span class="status-dot"></span> {{ isStaticDemo ? 'Example' : 'Open' }}</span>
+              <span v-if="!linkedIssue" class="open-label"><span class="status-dot"></span> {{ isStaticDemo ? 'Example' : 'Open' }}</span>
             </div>
             <h2 class="issue-title">{{ selectedIssue.title }}</h2>
             <div class="detail-badges">
@@ -590,6 +648,12 @@ async function downloadReviews(kind) {
                 {{ label }}
               </span>
             </div>
+
+            <SecurityReport
+              v-if="selectedIssue.security_guidance"
+              :key="selectedIssue.url"
+              :guidance="selectedIssue.security_guidance"
+            />
 
             <section class="description-section">
               <div class="section-title">
@@ -604,7 +668,30 @@ async function downloadReviews(kind) {
               <p v-else class="issue-description-empty">No description provided.</p>
             </section>
 
-            <section class="similar-section">
+            <IssueSeverity
+              v-if="!linkedIssue && selectedIssue.severity && !selectedIssue.security_guidance"
+              :key="selectedIssue.url"
+              :issue="selectedIssue"
+              :read-only="isStaticDemo"
+            />
+
+            <section v-if="(labelSuggestionsStatus || (isStaticDemo && selectedIssue.suggested_labels)) && !selectedIssue.security_guidance" class="similar-section">
+              <div class="section-title">
+                <h3>Suggested GitHub labels</h3>
+              </div>
+              <p v-if="labelSuggestionsStatus === 'unavailable'" class="empty-similar">
+                Could not load GitHub labels. Fetch issues again to retry.
+              </p>
+              <ul v-else-if="selectedIssue.suggested_labels?.length" class="suggested-label-list">
+                <li v-for="label in selectedIssue.suggested_labels" :key="label.name">
+                  <span class="label-chip">{{ label.name }}</span>
+                  <span>{{ label.reason }}</span>
+                </li>
+              </ul>
+              <p v-else class="empty-similar">No additional labels suggested.</p>
+            </section>
+
+            <section v-if="!linkedIssue && !selectedIssue.security_guidance" class="similar-section">
               <div class="section-title">
                 <div>
                   <p class="eyebrow">CONTEXT</p>
@@ -649,7 +736,7 @@ async function downloadReviews(kind) {
               <p>{{ selectedIssue.example_summary.rationale }}</p>
             </div>
           </article>
-          <article v-else class="panel ai-panel">
+          <article v-else-if="!linkedIssue && !selectedIssue.security_guidance" class="panel ai-panel">
             <div class="ai-panel-heading">
               <div class="ai-icon">✳</div>
               <div>
@@ -751,7 +838,7 @@ async function downloadReviews(kind) {
               <p>{{ selectedIssue.example_reply.original }}</p>
             </details>
           </article>
-          <article v-if="!isStaticDemo" class="panel review-panel">
+          <article v-if="!isStaticDemo && !selectedIssue.security_guidance" class="panel review-panel">
             <h3>Maintainer reply</h3>
             <div class="review-actions reply-mode-actions">
               <button

@@ -194,6 +194,31 @@ def _fetch_repository_issues(
     return issues
 
 
+def fetch_repository_labels(repository: str) -> list[str]:
+    slug = _repository_slug(repository)
+    labels: list[str] = []
+    page = 1
+    while True:
+        response = requests.get(
+            f"{API_URL}/repos/{slug}/labels",
+            params={"per_page": _ISSUE_PAGE_SIZE, "page": page},
+            headers=_request_headers(),
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise ValueError("GitHub returned an unexpected repository label response.")
+        for item in payload:
+            if not isinstance(item, dict) or not isinstance(item.get("name"), str) or not item["name"].strip():
+                raise ValueError("GitHub returned an invalid repository label.")
+            if not item.get("archived_at"):
+                labels.append(item["name"])
+        if "next" not in response.links:
+            return labels
+        page += 1
+
+
 def fetch_issues(repository: str, limit: int = 10) -> list[GitHubIssue]:
     if (
         isinstance(limit, bool)

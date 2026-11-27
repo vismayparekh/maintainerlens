@@ -6,11 +6,12 @@ AI assistant for triaging GitHub issues and preparing pull request reviews.
 
 [Open the hosted MaintainerLens demo](https://huggingface.co/spaces/vismayparekh/maintainerlens-demo).
 
-The static Vue build shows curated issues and pull requests from scikit-learn
-and pandas, one related-issue match from the development benchmark, saved PR
-briefs, and an assistant-reviewed reply example. It also shows the measured
-classification, duplicate-retrieval, and PR checklist results. Descriptions
-are paraphrased and link to the original public GitHub records.
+The static Vue build shows curated issues, pull requests, and discussions from
+scikit-learn and pandas. It includes saved severity and label suggestions, a
+related-issue match, PR review briefs, an edited reply, and a discussion with
+an accepted answer. It also shows the classification, duplicate-retrieval, and
+PR checklist benchmark results. Descriptions are paraphrased and link to the
+original public GitHub records.
 
 Build and preview the portfolio version locally without starting FastAPI:
 
@@ -22,7 +23,8 @@ npm run preview -- --outDir dist-demo
 ```
 
 The portfolio build runs in the browser with bundled examples. The Docker
-app below provides live GitHub loading, new AI suggestions, and review storage.
+app below provides live GitHub loading, private-reporting guidance, new AI
+suggestions, and review storage.
 
 ## Run the Docker demo
 
@@ -98,6 +100,61 @@ open issue against the other open issues in the current batch and the fetched
 closed-issue history. Up to three ranked suggestions link to candidate issues.
 Similarity scores are signals, not probabilities, and suggestions are not
 confirmed duplicates. Review them before taking action.
+
+### Review suggested GitHub labels
+
+After fetching an issue inbox, open an issue to see **Suggested GitHub labels**
+below its description. MaintainerLens reads the repository's label catalog
+once per inbox and uses the exact GitHub label names. It can suggest one
+category label and up to two topics supported by the title. It skips existing
+labels, archived labels, and extra category labels when a category is already
+present. Use the issue link to apply any suggestions you agree with on GitHub.
+
+API callers can request suggestions with
+`GET /api/issues?repository=owner/repo&include_label_suggestions=true`.
+Suggestions are returned as `suggested_labels` on each issue. A catalog
+failure sets `label_suggestions_status` to `unavailable` and still returns the
+issues and their related context. The portfolio build uses bundled examples.
+
+### Review issue severity
+
+The live Issues inbox suggests **High** for reported startup blockers or
+data loss, **Moderate** for a concrete failure in a workflow, and **Low**
+for an explicitly cosmetic or wording issue. It shows **Needs review** when
+the reported impact is unclear or the issue is a question or feature request.
+Each suggestion includes its reason. The inbox keeps its existing order.
+
+Use **Severity decision** to save your choice in the current browser, or
+choose **Use suggestion** to clear your override. The issue API returns the
+original suggestion under `severity` with a `level` and `reason`. The browser
+choice is local to the issue and device.
+
+### Route possible security reports
+
+When an issue has a security-related label or its visible text contains a
+vulnerability signal, the issue view offers the repository's GitHub security
+page and security policy. Use **Report a vulnerability** on GitHub when the
+repository enables it. The policy may provide a private contact instead.
+**Copy private-reporting reply** copies a short message that keeps further
+technical details out of the public thread.
+
+Flagged issues use the local reporting guidance and stay out of related-issue
+results and AI requests. The API returns the guidance as `security_guidance`.
+Its reply endpoint returns a local message and an empty checklist when it
+detects a possible security report in the submitted text.
+
+### Read public GitHub Discussions
+
+Set `GITHUB_TOKEN` in the backend environment using a token with read access to
+the public repository's Discussions, then restart FastAPI. Choose
+**Discussions**, enter a repository such as `pandas-dev/pandas`, and select
+**Fetch discussions**. Open a thread to read its post, existing labels, accepted
+answer when available, and a preview of up to five recent comments.
+
+The API exposes `GET /api/discussions?repository=owner/repo&limit=10` and
+`GET /api/discussions/{number}?repository=owner/repo`. A repository with
+Discussions disabled has a separate empty state. Use the thread link for the
+full conversation.
 
 ### Review public pull requests
 
@@ -395,7 +452,9 @@ returned and recall uses all annotated links in the evaluated pools.
 
 ### Reproduce the development baseline
 
-The [dataset card](data/evaluation/README.md) documents the development and
+The [published benchmark](https://huggingface.co/datasets/vismayparekh/maintainerlens-benchmark)
+contains the category and similarity splits. The local
+[dataset card](data/evaluation/README.md) documents the development and
 test splits for Hugging Face Datasets. Capture the development issue text once,
 then reuse the same snapshots for later comparisons:
 
