@@ -5,10 +5,23 @@ from app.github_client import (
     fetch_closed_issues,
     fetch_issue_by_number,
     fetch_issues,
+    fetch_repository_labels,
 )
 
 
 class FetchIssuesTests(unittest.TestCase):
+    @patch("app.github_client.requests.get")
+    def test_fetches_repository_labels_across_pages_and_skips_archived_labels(self, get: Mock) -> None:
+        first = Mock(links={"next": {"url": "https://api.github.com/repos/acme/project/labels?page=2"}})
+        first.json.return_value = [{"name": "Bug"}, {"name": "Archived", "archived_at": "2025-01-01T00:00:00Z"}]
+        second = Mock(links={})
+        second.json.return_value = [{"name": "module:linear_model"}]
+        get.side_effect = [first, second]
+
+        self.assertEqual(fetch_repository_labels("https://github.com/acme/project.git"), ["Bug", "module:linear_model"])
+        self.assertEqual([call.kwargs["params"]["page"] for call in get.call_args_list], [1, 2])
+        self.assertTrue(all(call.args[0] == "https://api.github.com/repos/acme/project/labels" for call in get.call_args_list))
+
     @patch.dict("os.environ", {}, clear=True)
     @patch("app.github_client.requests.get")
     def test_fetches_issues_and_excludes_pull_requests(self, get: Mock) -> None:

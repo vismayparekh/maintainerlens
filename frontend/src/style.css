@@ -918,6 +918,71 @@ a {
   gap: 7px;
 }
 
+.suggested-label-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #526273;
+  font-size: 12px;
+}
+
+.suggested-label-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+}
+
+.suggested-label-list .label-chip {
+  overflow-wrap: anywhere;
+  color: #166b67;
+  background: #eef7f5;
+  font-size: 11px;
+}
+
+.severity-reason {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  color: #526273;
+  font-size: 12px;
+}
+
+.severity-reason strong {
+  color: #293d4f;
+}
+
+.severity-field {
+  max-width: 230px;
+}
+
+.severity-note {
+  margin: 8px 0 0;
+  color: #526273;
+  font-size: 12px;
+}
+
+.security-reply {
+  margin-top: 14px;
+}
+
+.security-help {
+  margin: 0 0 10px;
+  color: #526273;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.discussion-comment + .discussion-comment {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f2;
+}
+
 .similar-row {
   display: flex;
   align-items: center;

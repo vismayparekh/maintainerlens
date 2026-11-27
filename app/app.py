@@ -21,6 +21,7 @@ from app.processor import (
     summarize_issue,
 )
 from app.review_store import ReviewStoreError, export_reviews_csv, save_review
+from app.security_guidance import security_guidance
 
 
 _APP_CSS = """
@@ -235,6 +236,9 @@ def generate_ai_analysis(
             "",
         )
 
+    guidance = security_guidance(issue)
+    if guidance:
+        return (guidance.reply, "", None, None, gr.update(interactive=False), "")
     try:
         analysis = analyze_issue(issue.title, issue.body)
     except IssueAnalysisNotConfiguredError as exc:

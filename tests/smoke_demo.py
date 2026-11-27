@@ -4,7 +4,7 @@ from html.parser import HTMLParser
 from time import monotonic, sleep
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 
 class DashboardAssets(HTMLParser):
@@ -48,7 +48,7 @@ def verify_demo(base_url, repository=None):
             if not response.read(1):
                 raise ValueError(f"Dashboard asset is empty: {asset}")
 
-    for route in ("issues", "pull-requests"):
+    for route in ("issues", "pull-requests", "discussions"):
         invalid = urlencode({"repository": "invalid"})
         try:
             urlopen(f"{base_url}/api/{route}?{invalid}", timeout=5).close()
@@ -59,7 +59,24 @@ def verify_demo(base_url, repository=None):
         else:
             raise ValueError(f"/api/{route} accepted an invalid repository.")
 
-    print(f"Health, dashboard assets ({len(assets.assets)}), and issue/PR API routing passed.")
+    suspected_report = json.dumps({
+        "title": "Possible security vulnerability",
+        "body": "Synthetic smoke-test report.",
+    }).encode("utf-8")
+    request = Request(
+        f"{base_url}/api/issues/draft-reply",
+        data=suspected_report,
+        headers={"Content-Type": "application/json"},
+    )
+    with urlopen(request, timeout=5) as response:
+        guidance = json.load(response)
+    if guidance["checklist"] or "private reporting" not in guidance["reply"].casefold():
+        raise ValueError("Suspected security reports must receive the local private-reporting reply.")
+
+    print(
+        f"Health, dashboard assets ({len(assets.assets)}), issue/PR/discussion routes, "
+        "and private-reporting fallback passed."
+    )
     if repository:
         query = urlencode({"repository": repository, "limit": 1})
         with urlopen(f"{base_url}/api/issues?{query}", timeout=60) as response:
