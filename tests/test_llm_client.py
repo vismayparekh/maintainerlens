@@ -4,12 +4,16 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from openai import OpenAIError
+
 from app.llm_client import (
     MAX_ISSUE_BODY_CHARS,
     IssueAnalysis,
     IssueAnalysisError,
     IssueAnalysisNotConfiguredError,
+    ReplyDraft,
     analyze_issue,
+    draft_issue_reply,
 )
 
 
@@ -164,6 +168,72 @@ class AnalyzeIssueTests(unittest.TestCase):
         self.assertTrue(result.summary.endswith("..."))
         self.assertTrue(result.summary[:-3].endswith("useful"))
         self.assertTrue(result.summary_truncated)
+
+
+@patch.dict(os.environ, {"HF_TOKEN": "test-token", "HF_MODEL": "test-model"})
+class ReplyDraftTests(unittest.TestCase):
+    @staticmethod
+    def completion(content, finish_reason="stop"):
+        return SimpleNamespace(choices=[SimpleNamespace(
+            finish_reason=finish_reason, message=SimpleNamespace(content=content),
+        )])
+
+    @patch("app.llm_client.OpenAI")
+    def test_retries_incomplete_or_malformed_output_once(self, openai_client):
+        draft = ReplyDraft(reply="Thanks for the report.", checklist=[], related_issue_numbers=[])
+        success = self.completion(draft.model_dump_json())
+        failures = (
+            (self.completion(None, "length"), "output_token_limit"),
+            (SimpleNamespace(choices=[]), "empty_output"),
+            (self.completion('{"reply":"missing fields"}'), "invalid_schema"),
+        )
+        create = openai_client.return_value.chat.completions.create
+        for response, reason in failures:
+            with self.subTest(reason=reason):
+                openai_client.reset_mock()
+                create.side_effect = [response, success]
+                with self.assertLogs("app.llm_client", level="WARNING") as logs:
+                    actual = draft_issue_reply("Example title", "The workaround already works.", [])
+
+                self.assertEqual(actual, draft)
+                self.assertEqual([call.kwargs["max_tokens"] for call in create.call_args_list], [4096, 8192])
+                self.assertTrue(all(call.kwargs["max_retries"] == 0 for call in openai_client.call_args_list))
+                prompt = create.call_args.kwargs["messages"][0]["content"]
+                self.assertIn("workarounds the reporter has already tried", prompt)
+                self.assertIn("ask no follow-up questions", prompt)
+                self.assertIn(f"attempt=1 reason={reason} retrying=True", logs.output[0])
+                self.assertNotIn("The workaround already works.", logs.output[0])
+
+    @patch("app.llm_client.OpenAI")
+    def test_stops_after_two_malformed_responses(self, openai_client):
+        create = openai_client.return_value.chat.completions.create
+        create.return_value = self.completion("malformed model output")
+        with self.assertLogs("app.llm_client", level="WARNING") as logs:
+            with self.assertRaisesRegex(IssueAnalysisError, "incomplete or invalid reply draft"):
+                draft_issue_reply("Example title", "Example body.", [])
+
+        self.assertEqual(create.call_count, 2)
+        self.assertIn("attempt=2 reason=invalid_schema retrying=False", logs.output[-1])
+        self.assertNotIn("malformed model output", "\n".join(logs.output))
+
+    @patch("app.llm_client.OpenAI")
+    def test_does_not_retry_provider_failures_or_refusals(self, openai_client):
+        create = openai_client.return_value.chat.completions.create
+        failures = (
+            (OpenAIError("private provider diagnostics"), "provider_error"),
+            (self.completion(None, "content_filter"), "provider_refused"),
+        )
+        for response, reason in failures:
+            with self.subTest(reason=reason):
+                create.reset_mock()
+                create.side_effect = [response]
+                with self.assertLogs("app.llm_client", level="WARNING") as logs:
+                    with self.assertRaises(IssueAnalysisError):
+                        draft_issue_reply("Example title", "Example body.", [])
+
+                create.assert_called_once()
+                self.assertIn(f"attempt=1 reason={reason} retrying=False", logs.output[0])
+                self.assertNotIn("private provider diagnostics", logs.output[0])
 
 
 if __name__ == "__main__":

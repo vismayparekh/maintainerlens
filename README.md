@@ -397,6 +397,8 @@ apply. **Copy reply** copies the reply for manual use. MaintainerLens sends the
 selected issue text and up to three candidate issue titles and numbers to
 Hugging Face only when you request a draft. It adds links from those candidates
 when the model selects them. Replies are never posted automatically.
+Reply generation can make one additional provider call when the output is
+incomplete or fails schema validation. See the [reply reliability benchmark](data/evaluation/reply-generation-reliability.md) for the measured comparison.
 
 **Export reply reviews** downloads the original draft, the edited text, and the
 elapsed time from starting either mode to clicking save. Assisted time includes
