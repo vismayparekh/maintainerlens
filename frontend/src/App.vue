@@ -48,11 +48,12 @@ const replyMessage = ref('')
 const exportError = ref('')
 const publicDemo = ref(false)
 const demoGeneration = ref(false)
+const publicGenerationLimit = ref(0)
 const demoAccessKey = ref('')
 const generationNotice = computed(() => {
   if (!publicDemo.value) return ''
   if (!demoGeneration.value) return 'AI generation is currently unavailable in this live demo.'
-  return demoAccessKey.value.trim() ? '' : 'Enter a demo access key above to generate a fresh result.'
+  return publicGenerationLimit.value || demoAccessKey.value.trim() ? '' : 'Enter a demo access key above to generate a fresh result.'
 })
 let analysisRequest = null
 let relatedRequest = null
@@ -112,6 +113,7 @@ onMounted(async () => {
       const settings = await response.json()
       publicDemo.value = settings.public_demo === true
       demoGeneration.value = settings.demo_generation === true
+      publicGenerationLimit.value = settings.public_generation_daily_limit ?? 0
     }
   } catch {
     // The API enforces any hosting limits even if status cannot be loaded.
@@ -188,7 +190,7 @@ function selectIssue(issue) {
 
 function generationHeaders() {
   const headers = { 'Content-Type': 'application/json' }
-  if (publicDemo.value && demoAccessKey.value.trim()) {
+  if (publicDemo.value && !publicGenerationLimit.value && demoAccessKey.value.trim()) {
     headers['X-MaintainerLens-Access-Key'] = demoAccessKey.value.trim()
   }
   return headers
@@ -505,7 +507,10 @@ async function downloadReviews(kind) {
         </div>
       </section>
 
-      <label v-if="publicDemo && demoGeneration" class="review-field hosted-access">
+      <p v-if="publicGenerationLimit" class="load-status">
+        Public AI generation is limited to {{ publicGenerationLimit }} requests per day across all visitors.
+      </p>
+      <label v-else-if="publicDemo && demoGeneration" class="review-field hosted-access">
         <span class="field-label">Demo access key</span>
         <input v-model="demoAccessKey" type="password" autocomplete="off" spellcheck="false" />
       </label>
@@ -560,7 +565,7 @@ async function downloadReviews(kind) {
         ref="pullRequestsView"
         v-model:loading="loadingPullRequests"
         :generation-notice="generationNotice"
-        :demo-access-key="publicDemo ? demoAccessKey.trim() : ''"
+        :demo-access-key="publicDemo && !publicGenerationLimit ? demoAccessKey.trim() : ''"
       />
       <Discussions
         v-if="!linkedIssue"

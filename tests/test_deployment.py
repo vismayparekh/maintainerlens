@@ -1,11 +1,14 @@
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import patch
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.api import app
+from app.deployment import PUBLIC_GENERATION_DAILY_LIMIT, _DailyGenerationQuota
 from app.github_client import _request_headers
-from app.llm_client import IssueAnalysis
+from app.llm_client import IssueAnalysis, ReplyDraft
 
 
 class PublicDemoTests(unittest.TestCase):
@@ -56,6 +59,39 @@ class PublicDemoTests(unittest.TestCase):
         self.assertEqual(reply.status_code, 200)
         self.assertIn("private reporting", reply.json()["reply"])
         draft.assert_not_called()
+
+    @patch.dict("os.environ", {
+        "MAINTAINERLENS_PUBLIC_DEMO": "1", "MAINTAINERLENS_PUBLIC_GENERATION": "1", "HF_TOKEN": "test-hf",
+    }, clear=True)
+    @patch("app.api.analyze_issue")
+    @patch("app.api.draft_issue_reply")
+    def test_anonymous_generation_uses_one_shared_quota(self, draft, analyze):
+        analyze.return_value = IssueAnalysis(summary="Example", category="Bug", rationale="Example rationale.")
+        draft.return_value = ReplyDraft(reply="Thanks for the report.", checklist=[], related_issue_numbers=[])
+        with patch("app.deployment._public_generation_quota", _DailyGenerationQuota(2)):
+            settings = self.client.get("/api/deployment").json()
+            self.assertTrue(settings["demo_generation"])
+            self.assertEqual(settings["public_generation_daily_limit"], PUBLIC_GENERATION_DAILY_LIMIT)
+            self.assertEqual(self.client.post("/api/issues/analyze", json=self.issue).status_code, 200)
+            self.assertEqual(self.client.post("/api/issues/draft-reply", json=self.issue).status_code, 200)
+            exhausted = self.client.post("/api/issues/draft-reply", json=self.issue)
+            self.assertEqual(exhausted.status_code, 429)
+            self.assertGreater(int(exhausted.headers["retry-after"]), 0)
+            safe_reply = self.client.post(
+                "/api/issues/draft-reply", json={"title": "Possible security vulnerability", "body": ""},
+            )
+            self.assertEqual(safe_reply.status_code, 200)
+        analyze.assert_called_once()
+        draft.assert_called_once()
+
+    def test_daily_quota_resets_at_utc_midnight(self):
+        quota = _DailyGenerationQuota(1)
+        before = datetime(2026, 11, 26, 23, 59, tzinfo=timezone.utc)
+        quota.take(before)
+        with self.assertRaises(HTTPException) as exhausted:
+            quota.take(before)
+        self.assertEqual(exhausted.exception.headers, {"Retry-After": "60"})
+        quota.take(datetime(2026, 11, 27, 0, 0, tzinfo=timezone.utc))
 
     @patch.dict("os.environ", {"MAINTAINERLENS_PUBLIC_DEMO": "1", "GITHUB_TOKEN": "test-github"}, clear=True)
     def test_public_rest_reads_do_not_use_the_server_token(self):
