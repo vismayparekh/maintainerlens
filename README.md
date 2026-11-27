@@ -2,9 +2,20 @@
 
 AI assistant for triaging GitHub issues and preparing pull request reviews.
 
-## Portfolio demo
+## Project links
 
-[Open the hosted MaintainerLens demo](https://huggingface.co/spaces/vismayparekh/maintainerlens-demo).
+| Resource | What you can explore |
+| --- | --- |
+| [Live app on Render](https://maintainerlens-live.onrender.com/) | Load public GitHub repositories, triage issues, and generate replies and PR review briefs. |
+| [GitHub source code](https://github.com/vismayparekh/maintainerlens) | Browse the Vue frontend, FastAPI backend, setup instructions, and tests. |
+| [Hugging Face Space](https://huggingface.co/spaces/vismayparekh/maintainerlens-demo) | Walk through saved examples and benchmark results. |
+| [Hugging Face benchmark dataset](https://huggingface.co/datasets/vismayparekh/maintainerlens-benchmark) | Explore the issue-classification and duplicate-retrieval benchmarks. |
+| [Hugging Face classifier and model card](https://huggingface.co/vismayparekh/maintainerlens-issue-classifier) | Download the trained issue classifier and read its holdout results. |
+| [Live FastAPI docs](https://maintainerlens-live.onrender.com/docs) | Explore the API endpoints in Swagger UI. |
+| [Evaluation report](data/evaluation/2026-11-27-results.md) | See live response times, classifier comparisons, and the LoRA experiment. |
+| [Assistant quality review](data/evaluation/assistant-quality-review.md) | Review findings on reply accuracy, PR checklists, and issue labels. |
+
+## Portfolio demo
 
 The static Vue build shows curated issues, pull requests, and discussions from
 scikit-learn and pandas. It includes saved severity and label suggestions, a
