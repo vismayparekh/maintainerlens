@@ -103,7 +103,7 @@ def export_template(repository: str, limit: int, output: Path) -> int:
     return len(issues)
 
 
-def read_annotations(path: Path) -> list[Annotation]:
+def read_annotations(path: Path, *, limit: int | None = MAX_EVALUATION_ISSUES) -> list[Annotation]:
     with path.open(newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         if reader.fieldnames is None:
@@ -161,10 +161,8 @@ def read_annotations(path: Path) -> list[Annotation]:
 
     if not annotations:
         raise ValueError("The annotation CSV has no issue rows.")
-    if len(annotations) > MAX_EVALUATION_ISSUES:
-        raise ValueError(
-            f"Evaluate at most {MAX_EVALUATION_ISSUES} issues per CSV."
-        )
+    if limit is not None and len(annotations) > limit:
+        raise ValueError(f"Evaluate at most {limit} issues per CSV.")
     return annotations
 
 
@@ -535,17 +533,10 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _score_file(
-    csv_file: Path,
+def snapshot_issue_fetcher(
+    annotations: Sequence[Annotation] | Sequence[SimilarityAnnotation],
     snapshot: Path | None,
-    *,
-    similarity: bool,
-    semantic_threshold: float | None = None,
-    hybrid: bool = False,
-) -> str:
-    annotations = (
-        read_similarity_annotations(csv_file) if similarity else read_annotations(csv_file)
-    )
+) -> Callable[[str, int], GitHubIssue]:
     payload = None
     if snapshot is not None:
         if snapshot.exists():
@@ -575,6 +566,21 @@ def _score_file(
             raise ValueError(f"Snapshot has no valid issue text for {key}.")
         return GitHubIssue(number, record["title"], record["body"], (), record["url"])
 
+    return fetch_issue
+
+
+def _score_file(
+    csv_file: Path,
+    snapshot: Path | None,
+    *,
+    similarity: bool,
+    semantic_threshold: float | None = None,
+    hybrid: bool = False,
+) -> str:
+    annotations = (
+        read_similarity_annotations(csv_file) if similarity else read_annotations(csv_file)
+    )
+    fetch_issue = snapshot_issue_fetcher(annotations, snapshot)
     if similarity:
         return evaluate_similarity_annotations(
             annotations,

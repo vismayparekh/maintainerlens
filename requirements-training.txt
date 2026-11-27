@@ -1,0 +1,3 @@
+-r requirements-api.txt
+scikit-learn==1.8.0
+skops==0.13.0

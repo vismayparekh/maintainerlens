@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch
 
 from app.evaluate import (
     Annotation,
+    CSV_COLUMNS,
+    MAX_EVALUATION_ISSUES,
     SimilarityAnnotation,
     _score_file,
     evaluate_annotations,
@@ -18,6 +20,18 @@ from app.github_client import GitHubIssue
 
 
 class EvaluationTests(unittest.TestCase):
+    def test_training_annotations_can_exceed_the_evaluation_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "annotations.csv"
+            with path.open("w", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow(CSV_COLUMNS)
+                for number in range(1, MAX_EVALUATION_ISSUES + 2):
+                    writer.writerow(("owner/repo", number, "Title", "", "Bug", ""))
+            with self.assertRaisesRegex(ValueError, "Evaluate at most"):
+                read_annotations(path)
+            self.assertEqual(len(read_annotations(path, limit=None)), MAX_EVALUATION_ISSUES + 1)
+
     @patch("app.evaluate.fetch_issues")
     def test_exports_annotation_columns_without_issue_bodies(
         self, fetch_issues: Mock

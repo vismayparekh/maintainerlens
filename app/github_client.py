@@ -189,6 +189,7 @@ def _fetch_repository_issues(
     state: str,
     sort: str,
     limit: int,
+    label: str | None = None,
 ) -> list[GitHubIssue]:
     slug = _repository_slug(repository)
     options = _repository_request_options(slug)
@@ -203,6 +204,7 @@ def _fetch_repository_issues(
                 "direction": "desc",
                 "per_page": _ISSUE_PAGE_SIZE,
                 "page": page,
+                **({"labels": label} if label else {}),
             },
             timeout=REQUEST_TIMEOUT,
             **options,
@@ -230,6 +232,11 @@ def _fetch_repository_issues(
         page += 1
 
     return issues
+
+
+def fetch_labeled_issues(repository: str, label: str, limit: int = 100) -> list[GitHubIssue]:
+    """Fetch recent public issues with one GitHub label across all states."""
+    return _fetch_repository_issues(repository, state="all", sort="created", limit=limit, label=label)
 
 
 def fetch_repository_labels(repository: str) -> list[str]:

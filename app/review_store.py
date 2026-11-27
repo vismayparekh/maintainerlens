@@ -1,5 +1,6 @@
 from contextlib import closing
 import csv
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,8 +8,9 @@ from pathlib import Path
 from app.github_client import GitHubIssue
 from app.processor import ISSUE_CATEGORIES
 
-REVIEW_DB_PATH = (
-    Path(__file__).resolve().parents[1] / "data" / "maintainer_reviews.sqlite3"
+REVIEW_DB_PATH = Path(
+    os.environ.get("MAINTAINERLENS_REVIEW_DB")
+    or Path(__file__).resolve().parents[1] / "data" / "maintainer_reviews.sqlite3"
 )
 REVIEW_CSV_PATH = (
     Path(__file__).resolve().parents[1] / "data" / "maintainer_reviews.csv"
