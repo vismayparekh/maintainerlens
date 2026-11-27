@@ -72,13 +72,17 @@ Hosted review storage and export are disabled. The local Docker run keeps
 them available.
 
 To enable fresh AI generation, add an inference credential as `HF_TOKEN`
-and optionally set `HF_MODEL` in the Render environment. Inference usage
-comes from the Hugging Face account. Render generates a
-`MAINTAINERLENS_DEMO_ACCESS_KEY` for the hosted app. Share that access key only
-with demo participants, who can enter it in the dashboard. Keep provider
-credentials in Render's environment settings. API clients pass the demo
-access key in the `X-MaintainerLens-Access-Key` request header on generation
-requests.
+and optionally set `HF_MODEL` in the Render environment. The Blueprint
+enables `MAINTAINERLENS_PUBLIC_GENERATION=1`, so visitors can generate issue
+summaries, replies, and PR briefs without an access key. All visitors share
+10 generation attempts per UTC day on the running service. An instance
+restart resets the counter. Track actual provider charges in
+[Hugging Face inference usage](https://huggingface.co/settings/inference-providers/overview).
+
+Set `MAINTAINERLENS_PUBLIC_GENERATION=0` to require the generated
+`MAINTAINERLENS_DEMO_ACCESS_KEY` for generation again. API clients pass that
+key in the `X-MaintainerLens-Access-Key` request header. Keep provider
+credentials in Render's environment settings.
 
 For a deployment created without a provider key, run the credential-free
 smoke test against its HTTPS URL:

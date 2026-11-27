@@ -13,7 +13,15 @@ from fastapi import Depends, FastAPI, HTTPException, Path, Query, Request
 from fastapi.responses import FileResponse, Response
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator
 
-from app.deployment import demo_generation_configured, public_demo_enabled, require_generation_access, require_local_reviews
+from app.deployment import (
+    PUBLIC_GENERATION_DAILY_LIMIT,
+    demo_generation_configured,
+    public_demo_enabled,
+    public_generation_enabled,
+    require_generation_access,
+    require_local_reviews,
+    reserve_generation,
+)
 from app.github_discussions import (
     MAX_DISCUSSIONS,
     DiscussionDetails,
@@ -218,9 +226,13 @@ def health() -> dict[str, str]:
 
 
 @app.get("/api/deployment")
-def deployment(response: Response) -> dict[str, bool]:
+def deployment(response: Response) -> dict[str, bool | int]:
     response.headers["Cache-Control"] = "no-store"
-    return {"public_demo": public_demo_enabled(), "demo_generation": demo_generation_configured() and public_demo_enabled()}
+    available = public_demo_enabled() and demo_generation_configured()
+    settings: dict[str, bool | int] = {"public_demo": public_demo_enabled(), "demo_generation": available}
+    if available and public_generation_enabled():
+        settings["public_generation_daily_limit"] = PUBLIC_GENERATION_DAILY_LIMIT
+    return settings
 
 
 def _read_discussions(
@@ -287,6 +299,7 @@ def analyze_repository_pull_request(
     number: int = Path(ge=1), repository: str = Query(min_length=1),
 ) -> PullRequestAnalysis:
     details = read_pull_request(number, repository)
+    reserve_generation()
     try:
         return analyze_pull_request(details)
     except IssueAnalysisNotConfiguredError as exc:
@@ -412,6 +425,7 @@ def analyze_repository_issue(
     if security_reason(request.title, request.body):
         raise HTTPException(status_code=422, detail="Use the repository’s private security reporting instructions for this issue.")
     require_generation_access(http_request)
+    reserve_generation()
     try:
         analysis = analyze_issue(request.title, request.body)
     except IssueAnalysisNotConfiguredError as exc:
@@ -457,6 +471,7 @@ def draft_repository_reply(request: ReplyDraftRequest, http_request: Request) ->
     if security_reason(request.title, request.body):
         return ReplyDraftResponse(reply=private_reporting_reply(), checklist=[])
     require_generation_access(http_request)
+    reserve_generation()
     related = [issue for issue in request.related_issues if not security_reason(issue.issue_title, "")]
     try:
         draft = draft_issue_reply(

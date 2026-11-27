@@ -9,5 +9,7 @@ services:
         value: "7860"
       - key: MAINTAINERLENS_PUBLIC_DEMO
         value: "1"
+      - key: MAINTAINERLENS_PUBLIC_GENERATION
+        value: "1"
       - key: MAINTAINERLENS_DEMO_ACCESS_KEY
         generateValue: true
