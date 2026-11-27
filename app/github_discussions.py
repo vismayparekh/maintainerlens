@@ -79,7 +79,7 @@ class DiscussionList(BaseModel):
 
 def _query_repository(repository: str, query: str, **variables: int) -> dict:
     owner, name = _repository_slug(repository).split("/")
-    headers = _request_headers()
+    headers = _request_headers(use_demo_token=True)
     if "Authorization" not in headers:
         raise DiscussionsAccessError("Set GITHUB_TOKEN on the server to load GitHub Discussions.")
     response = requests.post(

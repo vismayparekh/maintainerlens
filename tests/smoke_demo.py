@@ -20,7 +20,7 @@ class DashboardAssets(HTMLParser):
             self.assets.append(attrs["href"])
 
 
-def verify_demo(base_url, repository=None):
+def verify_demo(base_url, repository=None, public_demo=False):
     base_url = base_url.rstrip("/")
     deadline = monotonic() + 30
     while True:
@@ -73,6 +73,19 @@ def verify_demo(base_url, repository=None):
     if guidance["checklist"] or "private reporting" not in guidance["reply"].casefold():
         raise ValueError("Suspected security reports must receive the local private-reporting reply.")
 
+    if public_demo:
+        with urlopen(f"{base_url}/api/deployment", timeout=5) as response:
+            if json.load(response) != {"public_demo": True, "demo_generation": False}:
+                raise ValueError("Expected the unauthenticated public demo configuration.")
+        try:
+            urlopen(f"{base_url}/api/reviews/export", timeout=5).close()
+        except HTTPError as exc:
+            with exc:
+                if exc.code != 404:
+                    raise ValueError("Unexpected review export response in the public demo.") from exc
+        else:
+            raise ValueError("The public demo exposed a review export.")
+
     print(
         f"Health, dashboard assets ({len(assets.assets)}), issue/PR/discussion routes, "
         "and private-reporting fallback passed."
@@ -96,9 +109,10 @@ def main():
     parser = argparse.ArgumentParser(description="Smoke-test the packaged MaintainerLens demo.")
     parser.add_argument("base_url")
     parser.add_argument("--repository", help="also exercise live GitHub loading for this public repository")
+    parser.add_argument("--public-demo", action="store_true", help="check a hosted demo started without an AI provider key")
     args = parser.parse_args()
     try:
-        verify_demo(args.base_url, args.repository)
+        verify_demo(args.base_url, args.repository, args.public_demo)
     except (KeyError, OSError, ValueError) as exc:
         parser.exit(1, f"Demo smoke test failed: {exc}\n")
 

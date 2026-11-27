@@ -7,6 +7,8 @@ from urllib.parse import urlsplit
 import requests
 from dotenv import load_dotenv
 
+from app.deployment import public_demo_enabled
+
 API_URL = "https://api.github.com"
 MAX_ISSUES = 20
 MAX_HISTORICAL_ISSUES = 100
@@ -79,10 +81,10 @@ class PullRequestDetails:
     issue_references: tuple[LinkedIssueReference, ...]
 
 
-def _request_headers() -> dict[str, str]:
+def _request_headers(*, use_demo_token: bool = False) -> dict[str, str]:
     headers = _API_HEADERS.copy()
     token = os.getenv("GITHUB_TOKEN")
-    if token:
+    if token and (use_demo_token or not public_demo_enabled()):
         headers["Authorization"] = f"Bearer {token}"
     return headers
 
