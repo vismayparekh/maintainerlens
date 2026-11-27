@@ -118,6 +118,41 @@ def _repository_slug(repository: str) -> str:
     return "/".join(parts)
 
 
+def _repository_request_options(slug: str) -> dict:
+    headers = _request_headers()
+    if not public_demo_enabled():
+        return {"headers": headers}
+
+    headers = _request_headers(use_demo_token=True)
+    if "Authorization" not in headers:
+        return {"headers": headers}
+
+    response = requests.get(
+        f"{API_URL}/repos/{slug}",
+        headers=headers,
+        timeout=REQUEST_TIMEOUT,
+        allow_redirects=False,
+    )
+    if response.status_code == 404 or 300 <= response.status_code < 400:
+        raise ValueError("Public GitHub repository not found.")
+    response.raise_for_status()
+    repository = response.json()
+    if (
+        not isinstance(repository, dict)
+        or repository.get("visibility") != "public"
+        or repository.get("private") is not False
+        or str(repository.get("full_name", "")).casefold() != slug.casefold()
+    ):
+        raise ValueError("Public GitHub repository not found.")
+    return {"headers": headers, "allow_redirects": False}
+
+
+def _raise_repository_status(response: requests.Response) -> None:
+    if public_demo_enabled() and 300 <= response.status_code < 400:
+        raise ValueError("Public GitHub repository not found.")
+    response.raise_for_status()
+
+
 def _parse_issue(item: dict[str, object]) -> GitHubIssue:
     title = item.get("title")
     url = item.get("html_url")
@@ -156,6 +191,7 @@ def _fetch_repository_issues(
     limit: int,
 ) -> list[GitHubIssue]:
     slug = _repository_slug(repository)
+    options = _repository_request_options(slug)
     issues: list[GitHubIssue] = []
     page = 1
     while len(issues) < limit:
@@ -168,10 +204,10 @@ def _fetch_repository_issues(
                 "per_page": _ISSUE_PAGE_SIZE,
                 "page": page,
             },
-            headers=_request_headers(),
             timeout=REQUEST_TIMEOUT,
+            **options,
         )
-        response.raise_for_status()
+        _raise_repository_status(response)
 
         payload = response.json()
         if not isinstance(payload, list):
@@ -198,16 +234,17 @@ def _fetch_repository_issues(
 
 def fetch_repository_labels(repository: str) -> list[str]:
     slug = _repository_slug(repository)
+    options = _repository_request_options(slug)
     labels: list[str] = []
     page = 1
     while True:
         response = requests.get(
             f"{API_URL}/repos/{slug}/labels",
             params={"per_page": _ISSUE_PAGE_SIZE, "page": page},
-            headers=_request_headers(),
             timeout=REQUEST_TIMEOUT,
+            **options,
         )
-        response.raise_for_status()
+        _raise_repository_status(response)
         payload = response.json()
         if not isinstance(payload, list):
             raise ValueError("GitHub returned an unexpected repository label response.")
@@ -269,10 +306,10 @@ def fetch_issue_by_number(repository: str, issue_number: int) -> GitHubIssue:
     slug = _repository_slug(repository)
     response = requests.get(
         f"{API_URL}/repos/{slug}/issues/{issue_number}",
-        headers=_request_headers(),
         timeout=REQUEST_TIMEOUT,
+        **_repository_request_options(slug),
     )
-    response.raise_for_status()
+    _raise_repository_status(response)
 
     item = response.json()
     if not isinstance(item, dict):
@@ -318,14 +355,14 @@ def _parse_pull_request(item: object) -> GitHubPullRequest:
     )
 
 
-def _get_pull_request_json(slug: str, path: str, **params):
+def _get_pull_request_json(slug: str, path: str, options: dict, **params):
     response = requests.get(
         f"{API_URL}/repos/{slug}/pulls{path}",
         params=params or None,
-        headers=_request_headers(),
         timeout=REQUEST_TIMEOUT,
+        **options,
     )
-    response.raise_for_status()
+    _raise_repository_status(response)
     return response.json()
 
 
@@ -334,7 +371,7 @@ def fetch_pull_requests(repository: str, limit: int = 10) -> list[GitHubPullRequ
         raise ValueError(f"Pull request limit must be between 1 and {MAX_PULL_REQUESTS}.")
     slug = _repository_slug(repository)
     items = _get_pull_request_json(
-        slug, "", state="open", sort="updated", direction="desc", per_page=limit
+        slug, "", _repository_request_options(slug), state="open", sort="updated", direction="desc", per_page=limit
     )
     if not isinstance(items, list):
         raise ValueError("GitHub returned an unexpected pull request list.")
@@ -376,7 +413,8 @@ def fetch_pull_request_details(repository: str, number: int) -> PullRequestDetai
     if type(number) is not int or number < 1:
         raise ValueError("Pull request number must be a positive integer.")
     slug = _repository_slug(repository)
-    item = _get_pull_request_json(slug, f"/{number}")
+    options = _repository_request_options(slug)
+    item = _get_pull_request_json(slug, f"/{number}", options)
     pull_request = _parse_pull_request(item)
     base = item.get("base")
     head = item.get("head")
@@ -392,7 +430,7 @@ def fetch_pull_request_details(repository: str, number: int) -> PullRequestDetai
 
     files = ()
     if changed_files:
-        payload = _get_pull_request_json(slug, f"/{number}/files", per_page=MAX_PULL_REQUEST_FILES)
+        payload = _get_pull_request_json(slug, f"/{number}/files", options, per_page=MAX_PULL_REQUEST_FILES)
         if not isinstance(payload, list):
             raise ValueError("GitHub returned an unexpected changed-file list.")
         files = tuple(_parse_pull_request_file(file) for file in payload[:MAX_PULL_REQUEST_FILES])

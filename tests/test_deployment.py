@@ -97,3 +97,42 @@ class PublicDemoTests(unittest.TestCase):
     def test_public_rest_reads_do_not_use_the_server_token(self):
         self.assertNotIn("Authorization", _request_headers())
         self.assertEqual(_request_headers(use_demo_token=True)["Authorization"], "Bearer test-github")
+
+    @patch.dict("os.environ", {"MAINTAINERLENS_PUBLIC_DEMO": "1", "GITHUB_TOKEN": "test-github"}, clear=True)
+    @patch("app.github_client.requests.get")
+    def test_public_rest_reads_authenticate_after_checking_repository_visibility(self, get):
+        from app.github_client import fetch_issues
+
+        get.return_value.status_code = 200
+        get.return_value.json.side_effect = [
+            {"visibility": "public", "private": False, "full_name": "Acme/Project"},
+            [],
+        ]
+        self.assertEqual(fetch_issues("acme/project"), [])
+        self.assertEqual(
+            [call.args[0] for call in get.call_args_list],
+            ["https://api.github.com/repos/acme/project", "https://api.github.com/repos/acme/project/issues"],
+        )
+        for call in get.call_args_list:
+            self.assertEqual(call.kwargs["headers"]["Authorization"], "Bearer test-github")
+            self.assertIs(call.kwargs["allow_redirects"], False)
+
+    @patch.dict("os.environ", {"MAINTAINERLENS_PUBLIC_DEMO": "1", "GITHUB_TOKEN": "test-github"}, clear=True)
+    @patch("app.github_client.requests.get")
+    def test_public_rest_reads_fail_closed_for_nonpublic_or_moved_repositories(self, get):
+        from app.github_client import fetch_pull_requests
+
+        for status, metadata in (
+            (200, {"visibility": "private", "private": True, "full_name": "acme/project"}),
+            (200, {"visibility": "internal", "private": False, "full_name": "acme/project"}),
+            (200, {"visibility": "public", "private": False, "full_name": "different/project"}),
+            (301, {}),
+            (404, {}),
+        ):
+            with self.subTest(status=status, metadata=metadata):
+                get.reset_mock()
+                get.return_value.status_code = status
+                get.return_value.json.return_value = metadata
+                with self.assertRaisesRegex(ValueError, "Public GitHub repository not found"):
+                    fetch_pull_requests("acme/project")
+                get.assert_called_once()

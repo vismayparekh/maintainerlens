@@ -66,8 +66,9 @@ suspends when included usage runs out. The service can take about a minute
 to wake after inactivity. [Render Free limits](https://render.com/docs/free)
 
 Hosted mode lets visitors browse current public issues and pull requests
-using unauthenticated GitHub REST requests. Add a Discussions read token
-as `GITHUB_TOKEN` in Render's environment settings to enable Discussions.
+using GitHub REST. Set `GITHUB_TOKEN` in Render's environment settings with
+read access to public repositories. Hosted REST calls authenticate only after
+verifying the repository is public. Discussions also uses this token.
 Hosted review storage and export are disabled. The local Docker run keeps
 them available.
 
