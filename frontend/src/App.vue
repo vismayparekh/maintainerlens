@@ -670,7 +670,7 @@ async function downloadReviews(kind) {
 
           <footer class="issue-panel-footer">
             <span class="status-dot"></span>
-            Similarity scores are signals, not confidence
+            Review suggested matches before marking duplicates.
           </footer>
         </aside>
 
@@ -755,11 +755,10 @@ async function downloadReviews(kind) {
                   <span class="similar-copy">
                     <strong>#{{ match.number }} {{ match.title }}</strong>
                     <span>
-                      {{ isStaticDemo ? 'Benchmark example' : match.is_closed ? 'Closed history' : 'Open issue' }} · {{ match.category }}
-                      · {{ match.method === 'semantic' ? 'Semantic similarity' : 'Text similarity' }}
+                      {{ match.github_confirmed_duplicate && isStaticDemo ? 'GitHub-confirmed duplicate' : isStaticDemo ? 'Benchmark example' : match.is_closed ? 'Closed history' : 'Open issue' }} · {{ match.category }}
                     </span>
                   </span>
-                  <span class="similar-score">{{ Math.round(match.score * 100) }}%</span>
+                  <span class="similar-score">{{ match.method === 'semantic' ? 'Embedding similarity' : 'Text overlap' }} · {{ match.score.toFixed(2) }}</span>
                 </a>
               </div>
               <p v-else-if="relatedStatus === 'loading'" class="empty-similar" role="status">
@@ -960,8 +959,8 @@ async function downloadReviews(kind) {
         <div class="metrics-row demo-benchmark-metrics">
           <article class="metric-card">
             <span class="metric-label">ISSUE CLASSIFICATION</span>
-            <strong>95% macro F1</strong>
-            <span class="metric-detail">Rule-based baseline on 27 development issues</span>
+            <strong>77.9% macro F1</strong>
+            <span class="metric-detail">Live rules on 32 held-out issues · 95% on 27 development issues</span>
           </article>
           <article class="metric-card">
             <span class="metric-label">DUPLICATE RETRIEVAL</span>

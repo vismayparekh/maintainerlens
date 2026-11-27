@@ -1,0 +1,13 @@
+run_id,repository,number,change_accuracy,author_intent,actionable_checks,reviewer,notes
+e7f436167d97491eaf4be2c04f98b2d7,python-pillow/Pillow,10626,2,2,2,assistant,The checks tie the documentation corrections to particular image plugins and preview rendering.
+e7f436167d97491eaf4be2c04f98b2d7,encode/starlette,3773,2,2,2,assistant,"The checks target the receive_json signature, the corrected example, and nearby occurrences of the same error."
+e7f436167d97491eaf4be2c04f98b2d7,pandas-dev/pandas,72315,2,2,2,assistant,"The checklist validates Series return descriptions, concrete examples, and the separate Index aliases."
+e7f436167d97491eaf4be2c04f98b2d7,python-pillow/Pillow,10584,2,2,2,assistant,"The checks cover dimensions, drawing offset, and reuse of the bounding box in the documented output."
+e7f436167d97491eaf4be2c04f98b2d7,astral-sh/uv,23152,2,2,2,assistant,The checklist distinguishes Windows activation path handling from POSIX escaping and points to regression coverage.
+e7f436167d97491eaf4be2c04f98b2d7,fastapi/typer,1912,2,2,1,assistant,"Useful checks target buttons, appearance, and keyboard interaction. Two entries spend time on template coverage claims or a layout issue the author scoped out."
+e7f436167d97491eaf4be2c04f98b2d7,fastapi/typer,1475,2,2,2,assistant,All three Fish completion scenarios are called out and the checks ask for assertions and test evidence.
+e7f436167d97491eaf4be2c04f98b2d7,pandas-dev/pandas,72213,2,2,2,assistant,"The checklist checks both histogram entry points, categorical data, and the bar-to-tick assertion."
+e7f436167d97491eaf4be2c04f98b2d7,astral-sh/uv,23206,2,2,2,assistant,The checklist connects version redaction and filesystem assertions to the exception for stale-bucket pruning.
+e7f436167d97491eaf4be2c04f98b2d7,pandas-dev/pandas,72165,2,2,2,assistant,The checks trace the default sentinel across SQL callers and helpers and ask for evidence of preserved public behavior.
+e7f436167d97491eaf4be2c04f98b2d7,fastapi/typer,1858,2,2,2,assistant,"The checks cover the four trigger declarations, reopened events, and preservation of unrelated workflow behavior."
+e7f436167d97491eaf4be2c04f98b2d7,fastapi/typer,2012,2,2,1,assistant,The checklist identifies removed-generator references and build dependencies. The final check about the AI disclaimer's manual-review claim adds little to code review.

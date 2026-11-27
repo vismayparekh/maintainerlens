@@ -17,7 +17,7 @@ from app.llm_client import IssueAnalysisError, PullRequestAnalysis, _configured_
 class Case(BaseModel):
     repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
     number: int = Field(gt=0)
-    focus: Literal["documentation", "bug fix", "tests"]
+    focus: Literal["documentation", "bug fix", "tests", "refactor"]
 
     @property
     def key(self) -> tuple[str, int]:

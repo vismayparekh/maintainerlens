@@ -25,7 +25,8 @@
             "url": "https://github.com/scikit-learn/scikit-learn/issues/19433",
             "category": "Bug",
             "score": 0.2899177095674698,
-            "method": "text"
+            "method": "text",
+            "github_confirmed_duplicate": true
           }
         ],
         "example_summary": {
@@ -47,7 +48,8 @@
             "url": "https://github.com/scikit-learn/scikit-learn/issues/19416",
             "category": "Bug",
             "score": 0.2899177095674698,
-            "method": "text"
+            "method": "text",
+            "github_confirmed_duplicate": true
           }
         ],
         "example_summary": {

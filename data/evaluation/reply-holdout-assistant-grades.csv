@@ -1,0 +1,5 @@
+repository,number,first_attempt,retry,invalid_api_or_cli,evidence
+python-pillow/Pillow,9997,generated,not_needed,no,The draft used names and arguments from the reported reproducer and attributed the behavior to the reporter.
+fastapi/typer,1353,failed,failed,,The retry returned incomplete output and there was no draft to grade.
+astral-sh/uv,23364,failed,generated,no,The command and environment variables came from the report. The suggested follow-up narrows which symlinked directory triggers the warning.
+jazzband/pip-tools,2232,failed,generated,no,The newline options are documented. The checklist incorrectly marks confirmation of the workaround as missing after the reporter said they checked it.

@@ -470,6 +470,8 @@ The [evaluation report](data/evaluation/2026-11-27-results.md) records live
 response times, the classifier holdout, and the LoRA experiment. The
 [assistant quality review](data/evaluation/assistant-quality-review.md)
 covers PR checklists, issue labels, and reply accuracy. The
+[expanded holdouts](data/evaluation/expanded-holdout-results.md) add
+39 issues for classification, 28 for duplicate retrieval, and 12 PR briefs. The
 [published classifier](https://huggingface.co/vismayparekh/maintainerlens-issue-classifier)
 includes its model card and holdout manifest.
 

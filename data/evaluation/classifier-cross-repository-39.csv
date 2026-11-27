@@ -1,0 +1,40 @@
+repository,number,title,url,expected_category,duplicate_group,source_label
+astral-sh/uv,23364,"`uv python upgrade` reports its own bin link as ""not managed by uv"" when the install path traverses a symlink",https://github.com/astral-sh/uv/issues/23364,Bug,,bug
+astral-sh/uv,23299,uv run --with starts a console script outside the ephemeral environment when the cache path contains a space,https://github.com/astral-sh/uv/issues/23299,Bug,,bug
+astral-sh/uv,23293,Misleading version constraint output from `uv pip install`,https://github.com/astral-sh/uv/issues/23293,Bug,,bug
+astral-sh/uv,23300,"""uv install"" creates python*.exe shims to .local/bin regardless of UV_PYTHON_BIN_DIR or UV_TOOL_BIN_DIR",https://github.com/astral-sh/uv/issues/23300,Question,,question
+astral-sh/uv,23271,`tool.uv.environments` also acts as `required-environments`,https://github.com/astral-sh/uv/issues/23271,Question,,question
+astral-sh/uv,23128,Strict `fork-strategy=fewest` - resolve to a single version for each package,https://github.com/astral-sh/uv/issues/23128,Question,,question
+astral-sh/uv,23412,proxy indexes - option to resolve dependencies with one index and download from another,https://github.com/astral-sh/uv/issues/23412,Feature request,,enhancement
+astral-sh/uv,23323,Support `--env-file-if-exists` (no error thrown sans `.env` file),https://github.com/astral-sh/uv/issues/23323,Feature request,,enhancement
+astral-sh/uv,23275,"proxy-index: path-independent artifact mapping (Artifactory layout), follow-up to #20790",https://github.com/astral-sh/uv/issues/23275,Feature request,,enhancement
+astral-sh/uv,23196,Index from a path/git dependency's `tool.uv.sources` is used for the dependent project's packages,https://github.com/astral-sh/uv/issues/23196,Other,,documentation
+python-pillow/Pillow,9997,ImageOps.contain and pad fail when a narrow image rounds to zero pixels,https://github.com/python-pillow/Pillow/issues/9997,Bug,,Bug
+python-pillow/Pillow,8454,Segfault under free-threaded build,https://github.com/python-pillow/Pillow/issues/8454,Bug,,Bug
+python-pillow/Pillow,7839,exif_transpose raises TypeError: object of type 'IFDRational' has no len(),https://github.com/python-pillow/Pillow/issues/7839,Bug,,Bug
+python-pillow/Pillow,10068,Historical CC Attribution grant referenced by MspImagePlugin,https://github.com/python-pillow/Pillow/issues/10068,Question,,Question
+python-pillow/Pillow,10044,Should we accelerate min/max/median filter with clever autovectorizing kernels?,https://github.com/python-pillow/Pillow/issues/10044,Question,,Question
+python-pillow/Pillow,9385,Question about PIL.features.check & version,https://github.com/python-pillow/Pillow/issues/9385,Question,,Question
+python-pillow/Pillow,10167,Add support for 2-bit and 4-bit grayscale / luminance for saving PNG,https://github.com/python-pillow/Pillow/issues/10167,Feature request,,Enhancement
+python-pillow/Pillow,9619,Jarvis-judice-ninke dithering,https://github.com/python-pillow/Pillow/issues/9619,Feature request,,Enhancement
+python-pillow/Pillow,9438,Character mappings in Pillow,https://github.com/python-pillow/Pillow/issues/9438,Feature request,,Enhancement
+python-pillow/Pillow,10583,Example code in ImageText documentation makes incorrect use of get_bbox(),https://github.com/python-pillow/Pillow/issues/10583,Other,,Documentation
+fastapi/typer,1787,bug: envvar not working for `typer.Options` with `typer==0.26.0`,https://github.com/fastapi/typer/issues/1787,Bug,,bug
+fastapi/typer,1503,Overlap of typer and typer-slim causes package managemers to fail,https://github.com/fastapi/typer/issues/1503,Bug,,bug
+fastapi/typer,1353,Version 0.19.1 breaks default_factory that returns empty list,https://github.com/fastapi/typer/issues/1353,Bug,,bug
+fastapi/typer,543,"Auto-completion when application works in 2 modes (GUI, CLI)",https://github.com/fastapi/typer/issues/543,Question,,question
+fastapi/typer,540,Support for localization of messages,https://github.com/fastapi/typer/issues/540,Question,,question
+fastapi/typer,539,"how to use typer on class method __init__ with self argument, got this error: Error: Missing argument 'SELF'.",https://github.com/fastapi/typer/issues/539,Question,,question
+fastapi/typer,1242,Add support for command and subcommand aliases,https://github.com/fastapi/typer/issues/1242,Feature request,,feature
+fastapi/typer,950,Async support,https://github.com/fastapi/typer/issues/950,Feature request,,feature
+fastapi/typer,949,Improve support for autocompletion: `shell_complete` vs `autocompletion`,https://github.com/fastapi/typer/issues/949,Feature request,,feature
+jazzband/pip-tools,2294,IndexError when upgrading to Python 3.11 with rlextra,https://github.com/pypa/pip-tools/issues/2294,Bug,,bug
+jazzband/pip-tools,2235,Support click v8.3+,https://github.com/pypa/pip-tools/issues/2235,Bug,,bug
+jazzband/pip-tools,2232,[regression][6.10.0] `pip-compile` hangs on named pipes as input due to double-read,https://github.com/pypa/pip-tools/issues/2232,Bug,,bug
+jazzband/pip-tools,2501,pip-sync uninstalls pip,https://github.com/pypa/pip-tools/issues/2501,Question,,question
+jazzband/pip-tools,2377,Is there a way to generate hashes from an existing installation?,https://github.com/pypa/pip-tools/issues/2377,Question,,question
+jazzband/pip-tools,2230,pip-tools installation with hash,https://github.com/pypa/pip-tools/issues/2230,Question,,question
+jazzband/pip-tools,2252,pip-tools 7.5.1 is not compatible with pip 25.3,https://github.com/pypa/pip-tools/issues/2252,Feature request,,enhancement
+jazzband/pip-tools,2187,Specifying `src_files` for `pip-sync` in `pyproject.toml` is ignored.,https://github.com/pypa/pip-tools/issues/2187,Feature request,,enhancement
+jazzband/pip-tools,2182,[TODO] Explore the possibility using `appeal` for CLI processing,https://github.com/pypa/pip-tools/issues/2182,Feature request,,enhancement
+jazzband/pip-tools,2208,Release guide in the docs,https://github.com/pypa/pip-tools/issues/2208,Other,,docs

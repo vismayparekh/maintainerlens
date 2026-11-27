@@ -1,0 +1,13 @@
+repository,number,focus
+python-pillow/Pillow,10626,documentation
+encode/starlette,3773,documentation
+pandas-dev/pandas,72315,documentation
+python-pillow/Pillow,10584,bug fix
+astral-sh/uv,23152,bug fix
+fastapi/typer,1912,bug fix
+fastapi/typer,1475,tests
+pandas-dev/pandas,72213,tests
+astral-sh/uv,23206,tests
+pandas-dev/pandas,72165,refactor
+fastapi/typer,1858,refactor
+fastapi/typer,2012,refactor
